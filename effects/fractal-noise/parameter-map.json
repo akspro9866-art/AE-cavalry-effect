@@ -1,0 +1,152 @@
+{
+  "effectSlug": "fractal-noise",
+  "aeName": "Fractal Noise",
+  "aeMatchName": "ADBE Fractal Noise",
+  "aeCategory": "Noise & Grain",
+  "provenanceNote": "Reconstructs Adobe After Effects Fractal Noise using Cavalry 2.8+ GPU SkSL Filter with multi-octave 4D Simplex noise and contrast/brightness remapping.",
+  "parameters": [
+    {
+      "id": "FractalType",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Fractal Type",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Basic" },
+        { "value": 1, "label": "Turbulent Smooth" },
+        { "value": 2, "label": "Turbulent Basic" },
+        { "value": 3, "label": "Dynamic" }
+      ],
+      "description": "Base mathematical formulation of the noise fractal."
+    },
+    {
+      "id": "NoiseType",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Noise Type",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Soft Linear" },
+        { "value": 1, "label": "Spline" }
+      ],
+      "description": "Interpolation function used between noise lattice vertices."
+    },
+    {
+      "id": "Invert",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Invert",
+      "default": 0.0,
+      "description": "Inverts the black and white values of the noise."
+    },
+    {
+      "id": "Contrast",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Contrast",
+      "default": 100.0,
+      "min": 0.0,
+      "max": 1000.0,
+      "unit": "percent",
+      "description": "Contrast compression/expansion curve."
+    },
+    {
+      "id": "Brightness",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Brightness",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "unit": "offset",
+      "description": "Global brightness bias offset."
+    },
+    {
+      "id": "Overflow",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Overflow",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Clip" },
+        { "value": 1, "label": "Soft Clamp" },
+        { "value": 2, "label": "Wrap" }
+      ],
+      "description": "Handling of over-range highlights and shadow values."
+    },
+    {
+      "id": "Complexity",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Complexity",
+      "default": 6.0,
+      "min": 1.0,
+      "max": 10.0,
+      "unit": "octaves",
+      "description": "Number of noise octaves summed for fine micro-detail."
+    },
+    {
+      "id": "Scale",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Scale",
+      "default": 100.0,
+      "min": 1.0,
+      "max": 2000.0,
+      "unit": "pixels",
+      "description": "Spatial scale / zoom factor of the noise pattern."
+    },
+    {
+      "id": "Offset",
+      "slot": "inputs.8",
+      "type": "double2",
+      "aeName": "Offset (Turbulence)",
+      "default": { "x": 0.0, "y": 0.0 },
+      "description": "2D panning offset coordinates."
+    },
+    {
+      "id": "Evolution",
+      "slot": "inputs.9",
+      "type": "double",
+      "aeName": "Evolution",
+      "default": 0.0,
+      "unit": "degrees",
+      "description": "Phase angle driving continuous organic motion over time."
+    },
+    {
+      "id": "CycleEvolution",
+      "slot": "inputs.10",
+      "type": "bool",
+      "aeName": "Cycle Evolution",
+      "default": false,
+      "description": "Enforces seamless looping of the evolution phase."
+    },
+    {
+      "id": "CycleRevolutions",
+      "slot": "inputs.11",
+      "type": "double",
+      "aeName": "Cycle (in Revolutions)",
+      "default": 1.0,
+      "description": "Number of evolution revolutions before repeating."
+    },
+    {
+      "id": "RandomSeed",
+      "slot": "inputs.12",
+      "type": "double",
+      "aeName": "Random Seed",
+      "default": 0.0,
+      "description": "Initial state seed for procedural variation."
+    },
+    {
+      "id": "Opacity",
+      "slot": "inputs.13",
+      "type": "double",
+      "aeName": "Opacity",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Blend opacity of the generated noise over the layer."
+    }
+  ]
+}

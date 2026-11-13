@@ -1,0 +1,275 @@
+// Adobe After Effects "Deep Glow" (Plugin Reverse Engineered)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-fidelity SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.16`):
+// Stripped when setting `code` on live Cavalry `skslFilter` since Cavalry auto-injects them;
+// retained here for standalone SkSL compilation and offline mathematical validation.
+uniform float Radius;          // Spread radius in pixels (default: 120.0)
+uniform float Exposure;        // Glow brightness multiplier (default: 1.0)
+uniform float Threshold;       // Cutoff luminance for glow source (default: 0.0)
+uniform float ThresholdSmooth; // Smooth knee width for threshold (default: 0.1)
+uniform float SaturationBias;  // Bias threshold towards saturated colors (-1.0 to 1.0)
+uniform float AspectRatio;     // Anamorphic flare aspect ratio (default: 1.0)
+uniform float AspectAngle;     // Anamorphic flare rotation in degrees (default: 0.0)
+uniform float Aberration;      // Chromatic dispersion split (default: 0.0)
+uniform float GlowMode;        // 0 = Inverse Square, 1 = Smooth Gaussian, 2 = Core Concentrated
+uniform float BlendMode;       // 0 = Add, 1 = Screen, 2 = Glow Only
+uniform float TintMode;        // 0 = Off, 1 = Monocolor, 2 = Duocolor
+uniform half4 TintColor;       // Primary / Inner tint color (half4)
+uniform half4 TintColorOuter;  // Secondary / Outer tint color (half4)
+uniform float TintBlendMode;   // 0 = Multiply, 1 = Overlay, 2 = Soft Light
+uniform float TintStrength;    // Tint mix factor (0.0 to 1.0)
+uniform float ToneMapMode;     // 0=None, 1=ACES Filmic, 2=Filmic, 3=Reinhard, 4=Reinhard2, 5=Clamp Chroma
+uniform float SourceOpacity;   // Original layer visibility (default: 1.0)
+
+// Helper: RGB to HSV saturation (safe for HDR / overbright values)
+float rgb2s(half3 c) {
+    float maxVal = max(max(float(c.r), float(c.g)), float(c.b));
+    if (maxVal > 1.0) {
+        c /= half(maxVal);
+        maxVal = 1.0;
+    }
+    float minVal = min(min(float(c.r), float(c.g)), float(c.b));
+    float delta = maxVal - minVal;
+    return (maxVal > 1e-5) ? (delta / maxVal) : 0.0;
+}
+
+// Prefilter: Thresholding with soft knee and saturation bias
+half3 prefilterColor(half3 c, float thresh, float smoothKnee, float satBias) {
+    c = max(c, half3(0.0));
+    if (thresh > 0.0) {
+        half3 copy = c;
+        float low = max(thresh - smoothKnee, 0.0);
+        float high = thresh + smoothKnee + 1e-5;
+        half3 knee = smoothstep(half3(low), half3(high), c);
+        c *= knee;
+        if (abs(satBias) > 0.001) {
+            float s = rgb2s(copy);
+            if (satBias < 0.0) {
+                s = 1.0 - s;
+            }
+            float satKnee = smoothstep(low, high, s);
+            c = mix(c, copy * half(satKnee), half(abs(satBias)));
+        }
+    }
+    return c;
+}
+
+// Helper: Overlay blend mode (Pegtop/Photoshop overlay formula in linear space)
+half3 overlayBlend(half3 a, half3 b) {
+    return mix(half(2.0) * a * b, half(1.0) - half(2.0) * (half(1.0) - a) * (half(1.0) - b), step(half(0.5), a));
+}
+
+// Helper: Soft Light blend mode (Pegtop formula: ((1 - 2b) * a^2) + (2b * a))
+half3 softLightBlend(half3 a, half3 b) {
+    return ((half(1.0) - half(2.0) * b) * (a * a)) + (half(2.0) * b * a);
+}
+
+// Two-Tone Tint application matching Deep Glow's extracted GLSL shaders
+half3 applyTint(half3 glow, float mode, float blendMode, half3 colA, half3 colB, float strength) {
+    if (mode < 0.5 || strength <= 0.001) {
+        return glow;
+    }
+
+    half3 tintA;
+    if (blendMode < 0.5) { // 0 = Multiply
+        tintA = glow * colA;
+    } else if (blendMode < 1.5) { // 1 = Overlay (gamma-corrected overlay per Deep Glow)
+        half3 a = pow(max(glow, half3(0.0)), half3(0.45));
+        half3 b = pow(max(colA, half3(0.0)), half3(0.45));
+        tintA = overlayBlend(a, b);
+        tintA = pow(max(tintA, half3(0.0)), half3(2.22));
+    } else { // 2 = Soft Light
+        half3 clampedGlow = min(glow, half3(1.0));
+        tintA = softLightBlend(clampedGlow, colA);
+    }
+
+    if (mode > 1.5) { // 2 = Duocolor (Two-Tone Inner/Outer)
+        half3 tintB;
+        if (blendMode < 0.5) {
+            tintB = glow * colB;
+        } else if (blendMode < 1.5) {
+            half3 a = pow(max(glow, half3(0.0)), half3(0.45));
+            half3 b = pow(max(colB, half3(0.0)), half3(0.45));
+            tintB = overlayBlend(a, b);
+            tintB = pow(max(tintB, half3(0.0)), half3(2.2));
+        } else {
+            half3 clampedGlow = min(glow, half3(1.0));
+            tintB = softLightBlend(clampedGlow, colB);
+        }
+
+        // Inner highlight vs outer falloff blend
+        half3 inner = tintA;
+        half3 outer = tintB;
+        tintA = mix(outer, inner, clamp(glow, half3(0.0), half3(1.0)));
+    }
+
+    half3 result = mix(glow, tintA, half(strength));
+    return max(result, half3(0.0));
+}
+
+// Tone Mapping algorithms extracted directly from Deep Glow 2 binary
+half3 applyToneMap(half3 x, float mode) {
+    if (mode < 0.5) return x; // 0 = None
+
+    if (mode < 1.5) { // 1 = ACES Filmic curve
+        float3 v = float3(x);
+        float a = 2.51;
+        float b = 0.03;
+        float c = 2.43;
+        float d = 0.59;
+        float e = 0.14;
+        float3 mapped = clamp((v * (a * v + b)) / (v * (c * v + d) + e), 0.0, 1.0);
+        return half3(mapped);
+    }
+
+    if (mode < 2.5) { // 2 = Filmic (Hejl-Burgess-Dawson)
+        half3 X = max(half3(0.0), x - half(0.004));
+        half3 res = (X * (half(6.2) * X + half(0.5))) / (X * (half(6.2) * X + half(1.7)) + half(0.06));
+        return pow(res, half3(2.2));
+    }
+
+    if (mode < 3.5) { // 3 = Reinhard
+        return x / (x + half(1.0));
+    }
+
+    if (mode < 4.5) { // 4 = Reinhard 2 (extended white point)
+        const float L_white_sq = 16.0;
+        float3 v = float3(x);
+        float3 mapped = (v * (1.0 + v / L_white_sq)) / (1.0 + v);
+        return half3(mapped);
+    }
+
+    // 5 = Clamp Chroma (desaturate over-bright highlights)
+    float l = dot(float3(0.2126, 0.7152, 0.0722), float3(x));
+    float desat = clamp(l, 0.0, 1.0);
+    return half3(max(mix(float3(x), float3(l), desat), float3(0.0)));
+}
+
+half4 main(float2 fragCoord) {
+    half4 srcSample = layer.eval(fragCoord);
+
+    if (Exposure <= 0.0 || Radius <= 0.0) {
+        if (BlendMode > 1.5) { // Glow Only
+            return half4(0.0, 0.0, 0.0, 0.0);
+        }
+        return srcSample * half(SourceOpacity);
+    }
+
+    // Anamorphic aspect ratio and angle transformation matrix
+    float rad = AspectAngle * 0.017453292519943295; // degrees to radians
+    float cosA = cos(rad);
+    float sinA = sin(rad);
+    float aspect = max(AspectRatio, 0.01);
+    float invAspect = 1.0 / aspect;
+
+    // Multi-octave radial sampling kernel
+    // 6 concentric rings with golden-angle rotational interleaving
+    half3 glowAccum = half3(0.0);
+    float totalWeight = 0.0;
+
+    // Center core tap
+    half3 centerPrefilter = prefilterColor(srcSample.rgb, Threshold, ThresholdSmooth, SaturationBias);
+    float centerWeight = 1.0;
+    glowAccum += centerPrefilter * half(centerWeight);
+    totalWeight += centerWeight;
+
+    float radBase = max(Radius, 1.0);
+    float coreRadius = radBase * 0.15 + 2.0;
+    float sigma = radBase * 0.4 + 1.0;
+    bool hasAberration = (Aberration > 0.001);
+
+    for (int ring = 1; ring <= 6; ring++) {
+        float normDist = float(ring) / 6.0;
+        // Geometric expansion for deep optical reach
+        float r = radBase * pow(normDist, 1.6) * 1.1 + 1.0;
+
+        // Weight evaluation based on GlowMode
+        float w = 1.0;
+        if (GlowMode < 0.5) {
+            // Mode 0: Inverse Square (Deep Glow signature falloff)
+            float s = r / coreRadius;
+            w = 1.0 / (1.0 + s * s);
+        } else if (GlowMode < 1.5) {
+            // Mode 1: Smooth Gaussian
+            float s = r / sigma;
+            w = exp(-0.5 * s * s);
+        } else {
+            // Mode 2: Core Concentrated (cubic power falloff)
+            float s = r / (radBase * 0.1 + 1.5);
+            w = 1.0 / (1.0 + s * s * s);
+        }
+
+        // Interleaved angular rotation using the golden ratio
+        float ringRot = float(ring) * 2.3999632;
+
+        for (int tap = 0; tap < 8; tap++) {
+            float phi = float(tap) * 0.7853981633974483 + ringRot;
+            // Local unrotated anamorphic vector
+            float lx = r * cos(phi) * aspect;
+            float ly = r * sin(phi) * invAspect;
+
+            // Rotated anamorphic offset
+            float2 offset = float2(lx * cosA - ly * sinA, lx * sinA + ly * cosA);
+
+            half3 tapColor;
+            if (hasAberration) {
+                // Chromatic dispersion: Red expanded, Blue contracted
+                float rScale = 1.0 + Aberration * 0.12;
+                float bScale = 1.0 - Aberration * 0.12;
+                float2 rOffset = offset * rScale;
+                float2 bOffset = offset * bScale;
+
+                half3 sR = prefilterColor(layer.eval(fragCoord + rOffset).rgb, Threshold, ThresholdSmooth, SaturationBias);
+                half3 sG = prefilterColor(layer.eval(fragCoord + offset).rgb, Threshold, ThresholdSmooth, SaturationBias);
+                half3 sB = prefilterColor(layer.eval(fragCoord + bOffset).rgb, Threshold, ThresholdSmooth, SaturationBias);
+                tapColor = half3(sR.r, sG.g, sB.b);
+            } else {
+                tapColor = prefilterColor(layer.eval(fragCoord + offset).rgb, Threshold, ThresholdSmooth, SaturationBias);
+            }
+
+            glowAccum += tapColor * half(w);
+            totalWeight += w;
+        }
+    }
+
+    // Normalized and exposure-scaled glow intensity
+    half3 glow = (glowAccum / half(totalWeight)) * half(Exposure * 2.5);
+
+    // Two-Tone Tinting
+    glow = applyTint(glow, TintMode, TintBlendMode, TintColor.rgb, TintColorOuter.rgb, TintStrength);
+
+    // Tone Mapping
+    glow = applyToneMap(glow, ToneMapMode);
+
+    // Base layer contribution
+    half3 baseRgb = srcSample.rgb * half(SourceOpacity);
+    half baseAlpha = srcSample.a * half(SourceOpacity);
+
+    // Composite according to BlendMode
+    half3 finalRgb;
+    half finalAlpha;
+
+    if (BlendMode < 0.5) { // 0 = Add
+        finalRgb = baseRgb + glow;
+        half glowLum = max(glow.r, max(glow.g, glow.b));
+        finalAlpha = clamp(baseAlpha + glowLum, half(0.0), half(1.0));
+    } else if (BlendMode < 1.5) { // 1 = Screen
+        finalRgb = half(1.0) - (half(1.0) - clamp(baseRgb, half(0.0), half(1.0))) * (half(1.0) - clamp(glow, half(0.0), half(1.0)));
+        finalRgb = min(finalRgb, half(1.0));
+        half glowLum = max(glow.r, max(glow.g, glow.b));
+        finalAlpha = clamp(baseAlpha + glowLum, half(0.0), half(1.0));
+    } else { // 2 = Glow Only
+        finalRgb = glow;
+        half glowLum = max(glow.r, max(glow.g, glow.b));
+        finalAlpha = clamp(glowLum, half(0.0), half(1.0));
+    }
+
+    return half4(finalRgb, finalAlpha);
+}

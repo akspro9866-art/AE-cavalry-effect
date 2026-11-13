@@ -1,0 +1,203 @@
+{
+  "effectSlug": "deep-glow",
+  "aeName": "Deep Glow",
+  "aeMatchName": "ADBE Deep Glow",
+  "aeCategory": "Stylize",
+  "provenanceNote": "Extracted directly from After Effects Deep Glow 2 binary (macOS bundle & embedded GLSL shaders). Reconstructed mathematically for Cavalry 2.8+ GPU SkSL.",
+  "parameters": [
+    {
+      "id": "Radius",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Radius",
+      "default": 120.0,
+      "min": 0.0,
+      "max": 2000.0,
+      "unit": "pixels",
+      "description": "Optical spread radius of the glow falloff in pixels."
+    },
+    {
+      "id": "Exposure",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Exposure",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 20.0,
+      "unit": "multiplier",
+      "description": "Luminance multiplier / optical brightness of the glow."
+    },
+    {
+      "id": "Threshold",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Threshold",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Cutoff threshold below which source pixels do not emit glow."
+    },
+    {
+      "id": "ThresholdSmooth",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Threshold Smooth",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Soft knee transition band around the cutoff threshold."
+    },
+    {
+      "id": "SaturationBias",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Saturation Bias",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "unit": "ratio",
+      "description": "Bias threshold towards saturated colors (+1 = only saturated colors glow, -1 = desaturated colors glow)."
+    },
+    {
+      "id": "AspectRatio",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Aspect Ratio",
+      "default": 1.0,
+      "min": 0.05,
+      "max": 20.0,
+      "unit": "ratio",
+      "description": "Anamorphic stretch ratio. > 1.0 creates cinematic anamorphic lens flares."
+    },
+    {
+      "id": "AspectAngle",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Aspect Angle",
+      "default": 0.0,
+      "min": -180.0,
+      "max": 180.0,
+      "unit": "degrees",
+      "description": "Directional rotation angle of the anamorphic flare in degrees."
+    },
+    {
+      "id": "Aberration",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Chromatic Aberration",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Prismatic dispersion splitting Red, Green, and Blue glow channels."
+    },
+    {
+      "id": "GlowMode",
+      "slot": "inputs.8",
+      "type": "double",
+      "aeName": "Falloff",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Inverse Square (Photorealistic)" },
+        { "value": 1, "label": "Smooth Gaussian" },
+        { "value": 2, "label": "Core Concentrated" }
+      ],
+      "description": "Underlying mathematical falloff curve."
+    },
+    {
+      "id": "BlendMode",
+      "slot": "inputs.9",
+      "type": "double",
+      "aeName": "Blend Mode",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Add" },
+        { "value": 1, "label": "Screen" },
+        { "value": 2, "label": "Glow Only" }
+      ],
+      "description": "Composite method of glow with source layer."
+    },
+    {
+      "id": "TintMode",
+      "slot": "inputs.10",
+      "type": "double",
+      "aeName": "Tint Mode",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "Monocolor" },
+        { "value": 2, "label": "Duocolor (Two-Tone)" }
+      ],
+      "description": "Enables single color or two-tone inner/outer chromatic tinting."
+    },
+    {
+      "id": "TintColor",
+      "slot": "inputs.11",
+      "type": "color",
+      "aeName": "Tint Color",
+      "default": { "r": 255, "g": 200, "b": 120, "a": 255 },
+      "description": "Primary / Inner core glow tint color."
+    },
+    {
+      "id": "TintColorOuter",
+      "slot": "inputs.12",
+      "type": "color",
+      "aeName": "Tint Color Outer",
+      "default": { "r": 50, "g": 150, "b": 255, "a": 255 },
+      "description": "Secondary / Outer falloff glow tint color for Duocolor mode."
+    },
+    {
+      "id": "TintBlendMode",
+      "slot": "inputs.13",
+      "type": "double",
+      "aeName": "Tint Blend Mode",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Multiply" },
+        { "value": 1, "label": "Overlay" },
+        { "value": 2, "label": "Soft Light" }
+      ],
+      "description": "Color blending formula used for tint application."
+    },
+    {
+      "id": "TintStrength",
+      "slot": "inputs.14",
+      "type": "double",
+      "aeName": "Tint Strength",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Mix blend factor between original source color and tint."
+    },
+    {
+      "id": "ToneMapMode",
+      "slot": "inputs.15",
+      "type": "double",
+      "aeName": "Tone Mapping",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "None" },
+        { "value": 1, "label": "ACES Filmic" },
+        { "value": 2, "label": "Filmic (HBD)" },
+        { "value": 3, "label": "Reinhard" },
+        { "value": 4, "label": "Reinhard 2" },
+        { "value": 5, "label": "Clamp Chroma" }
+      ],
+      "description": "HDR tone mapping curve to compress specular blowouts."
+    },
+    {
+      "id": "SourceOpacity",
+      "slot": "inputs.16",
+      "type": "double",
+      "aeName": "Source Opacity",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Opacity of the original unblurred source layer."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+// Cavalry 2.8+ SkSL Filter Template
+// Built-in Cavalry preamble uniform (injected automatically by Cavalry — do NOT redeclare):
+//   `resolution` (float2) — Layer bounding dimensions in pixels (unpadded)
+// Coordinate space: centered at (0, 0), X in [-W/2, +W/2], Y in [-H/2, +H/2] (+Y UP).
+uniform shader layer;
+
+// Custom scalar uniforms (prefixed to avoid collisions with built-ins like `size`/`resolution`;
+// stripped automatically by applicator when binding via live Cavalry `inputs.*`, kept here for static & Mock checks):
+uniform float effAmount;
+uniform float effSize;
+uniform float effEvolution;
+
+half4 main(float2 fragCoord) {
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 uv = clamp((fragCoord / res) + float2(0.5), float2(0.0), float2(1.0));
+
+    // Normalize strength cleanly and avoid division by zero:
+    float safeSize = max(effSize, 0.001);
+    float phase = effEvolution * 0.017453292519943295; // deg -> rad
+
+    // Neutral pass-through with zeroed distortion when effAmount == 0:
+    float2 offset = float2(0.0, 0.0) * (effAmount / safeSize) * (cos(phase) * 0.0 + 1.0) * uv.x;
+    return layer.eval(fragCoord - offset);
+}

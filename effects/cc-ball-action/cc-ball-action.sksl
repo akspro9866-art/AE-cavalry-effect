@@ -1,0 +1,113 @@
+// Adobe After Effects "CC Ball Action" (CC Ball Action)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform float Scatter;           // Scatter displacement distance in pixels (default: 0.0, range: 0.0 to 1024.0)
+uniform float RotationAxis;      // 0 = X, 1 = Y, 2 = Z (default: 0)
+uniform float RotationAngle;     // 3D Grid rotation in degrees (default: 0.0)
+uniform float BallSize;          // Sphere radius percentage relative to grid (default: 100.0, range: 0.0 to 1000.0)
+uniform float GridSpacing;       // Distance between ball centers in pixels (default: 10.0, range: 1.0 to 100.0)
+uniform float InstabilityState;  // Pseudo-random seed for scatter field (default: 0.0, range: 0.0 to 10000.0)
+
+// Fast pseudo-random 3D hash generator for grid coordinates
+float3 ballHash3(float2 p, float seed) {
+    float3 q = float3(
+        dot(p, float2(127.1, 311.7)) + seed * 17.13,
+        dot(p, float2(269.5, 183.3)) + seed * 31.41,
+        dot(p, float2(419.2, 371.9)) + seed * 7.91
+    );
+    float3 s = sin(q) * 43758.5453;
+    return fract(s) * 2.0 - 1.0;
+}
+
+half4 main(float2 fragCoord) {
+    float S = max(1.0, GridSpacing);
+    float R = 0.5 * S * max(0.0, BallSize * 0.01);
+    if (R <= 0.001) {
+        return half4(0.0);
+    }
+
+    // Directional lighting vector (top-left key light)
+    float3 lightDir = normalize(float3(-0.4, -0.6, 0.7));
+    float3 viewDir = float3(0.0, 0.0, 1.0);
+
+    float2 baseCell = floor(fragCoord / S);
+    float maxZ = -1.0e9;
+    half4 bestColor = half4(0.0);
+
+    float rad = radians(RotationAngle);
+    float cosA = cos(rad);
+    float sinA = sin(rad);
+
+    // Scan immediate 3x3 grid cells to resolve overlap, 3D rotation, and scatter depth
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            float2 cell = baseCell + float2(float(dx), float(dy));
+            float2 cellCenter = (cell + 0.5) * S;
+
+            // Generate deterministic pseudo-random 3D scatter vector
+            float3 rnd = ballHash3(cell, InstabilityState);
+            float3 pos = float3(cellCenter.x + rnd.x * Scatter, cellCenter.y + rnd.y * Scatter, rnd.z * Scatter);
+
+            // Apply 3D Rotation (X, Y, or Z axis)
+            if (abs(RotationAngle) > 0.001) {
+                if (RotationAxis < 0.5) {
+                    // X-axis rotation
+                    float ny = pos.y * cosA - pos.z * sinA;
+                    float nz = pos.y * sinA + pos.z * cosA;
+                    pos.y = ny;
+                    pos.z = nz;
+                } else if (RotationAxis < 1.5) {
+                    // Y-axis rotation
+                    float nx = pos.x * cosA + pos.z * sinA;
+                    float nz = -pos.x * sinA + pos.z * cosA;
+                    pos.x = nx;
+                    pos.z = nz;
+                } else {
+                    // Z-axis rotation
+                    float nx = pos.x * cosA - pos.y * sinA;
+                    float ny = pos.x * sinA + pos.y * cosA;
+                    pos.x = nx;
+                    pos.y = ny;
+                }
+            }
+
+            float2 d = fragCoord - pos.xy;
+            float dist = length(d);
+
+            if (dist < R + 0.75) {
+                // Sphere silhouette antialiasing
+                float edge = smoothstep(R + 0.5, R - 0.5, dist);
+                if (edge > 0.0 && pos.z > maxZ) {
+                    float nx = d.x / R;
+                    float ny = d.y / R;
+                    float nz = sqrt(max(0.0, 1.0 - nx * nx - ny * ny));
+                    float3 norm = float3(nx, ny, nz);
+
+                    // Diffuse lighting (ambient + directional)
+                    float diff = max(0.0, dot(norm, lightDir));
+                    float lighting = 0.35 + 0.65 * diff;
+
+                    // Specular Phong highlight
+                    float3 reflectDir = reflect(-lightDir, norm);
+                    float spec = pow(max(0.0, dot(reflectDir, viewDir)), 16.0) * 0.45;
+
+                    // Sample source layer color at cell center
+                    half4 src = layer.eval(cellCenter);
+                    half3 shadedRgb = src.rgb * half(lighting) + half3(spec * lighting);
+
+                    bestColor = half4(clamp(shadedRgb, half3(0.0), half3(1.0)), src.a * half(edge));
+                    maxZ = pos.z;
+                }
+            }
+        }
+    }
+
+    return bestColor;
+}

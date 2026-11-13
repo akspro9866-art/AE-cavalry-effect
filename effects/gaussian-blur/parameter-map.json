@@ -1,0 +1,45 @@
+{
+  "effectSlug": "gaussian-blur",
+  "aeName": "Gaussian Blur",
+  "aeMatchName": "ADBE Gaussian Blur 2",
+  "aeCategory": "Blur & Sharpen",
+  "provenanceNote": "Reconstructs Adobe After Effects Gaussian Blur 2 using Cavalry 2.8+ GPU SkSL Filter with multi-directional Gaussian kernel and repeat edge pixels clamping.",
+  "parameters": [
+    {
+      "id": "Blurriness",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Blurriness",
+      "default": 50.0,
+      "min": 0.0,
+      "max": 1000.0,
+      "unit": "pixels",
+      "description": "Standard deviation / blur spread in pixels."
+    },
+    {
+      "id": "BlurDimensions",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Blur Dimensions",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Horizontal and Vertical" },
+        { "value": 1, "label": "Horizontal Only" },
+        { "value": 2, "label": "Vertical Only" }
+      ],
+      "description": "Directional axes along which the blur is evaluated."
+    },
+    {
+      "id": "RepeatEdgePixels",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Repeat Edge Pixels",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Clamps texture sampling at bounds to prevent transparent or dark edge vignetting."
+    }
+  ]
+}

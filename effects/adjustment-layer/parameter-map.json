@@ -1,0 +1,28 @@
+{
+  "effectSlug": "adjustment-layer",
+  "aeName": "Adjustment Layer",
+  "aeMatchName": "ADBE Adjustment Layer",
+  "aeCategory": "Layer",
+  "provenanceNote": "Reconstructs Adobe After Effects Adjustment Layer using Cavalry 2.8 Group filtering architecture with an attached GPU filter pipeline.",
+  "parameters": [
+    {
+      "id": "blendMode",
+      "type": "enum",
+      "aeName": "Blend Mode",
+      "description": "Composite blend mode of the adjustment group."
+    },
+    {
+      "id": "opacity",
+      "type": "double",
+      "aeName": "Opacity",
+      "default": 1.0,
+      "description": "Overall opacity multiplier of the adjustment group."
+    },
+    {
+      "id": "filters",
+      "type": "array",
+      "aeName": "Effects",
+      "description": "Connected filter pipeline applying visual processing to all child layers."
+    }
+  ]
+}

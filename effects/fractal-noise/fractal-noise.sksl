@@ -1,0 +1,197 @@
+// Adobe After Effects "Fractal Noise" (ADBE Fractal Noise)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.13`):
+uniform float FractalType;       // 0=Basic, 1=Turbulent Smooth, 2=Turbulent Basic, 3=Turbulent Sharp, 4=Dynamic
+uniform float NoiseType;         // 0=Soft Linear, 1=Spline
+uniform float Invert;            // 0=Normal, 1=Inverted
+uniform float Contrast;          // Noise contrast multiplier (default: 100.0)
+uniform float Brightness;        // Noise brightness offset (default: 0.0)
+uniform float Overflow;          // 0=Clip, 1=Soft Clamp, 2=Wrap
+uniform float Complexity;        // Octaves of detail (default: 6.0, range: 1.0 to 10.0)
+uniform float Scale;             // Spatial noise scale in pixels (default: 100.0)
+uniform float2 Offset;           // 2D Spatial panning offset
+uniform float Evolution;         // Phase evolution in degrees
+uniform bool CycleEvolution;     // Whether evolution cycles seamlessly
+uniform float CycleRevolutions;  // Number of revolutions before cycling
+uniform float RandomSeed;        // Noise seed offset
+uniform float Opacity;           // Blend opacity over layer (default: 1.0)
+
+float4 mod289(float4 x) {
+    return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+float mod289(float x) {
+    return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+float perm4(float x) {
+    float w = mod289(x);
+    return mod289(((w * 34.0) + 1.0) * w);
+}
+
+float4 grad4Symmetric(float j) {
+    float idx = floor(j - floor(j * 0.03125) * 32.0);
+    float s0 = 1.0 - 2.0 * step(0.25, fract(idx * 0.5));
+    float s1 = 1.0 - 2.0 * step(0.25, fract(floor(idx * 0.5) * 0.5));
+    float s2 = 1.0 - 2.0 * step(0.25, fract(floor(idx * 0.25) * 0.5));
+    float z = floor(idx * 0.125);
+    float z0 = 1.0 - step(0.5, abs(z - 0.0));
+    float z1 = 1.0 - step(0.5, abs(z - 1.0));
+    float z2 = 1.0 - step(0.5, abs(z - 2.0));
+    float z3 = 1.0 - step(0.5, abs(z - 3.0));
+    return z0 * float4(0.0, s0, s1, s2)
+         + z1 * float4(s0, 0.0, s1, s2)
+         + z2 * float4(s0, s1, 0.0, s2)
+         + z3 * float4(s0, s1, s2, 0.0);
+}
+
+float snoise4(float4 v) {
+    float F4 = 0.309016994374947451;
+    float G4 = 0.1381966011250105;
+    float NOISE4_GAIN = 27.0;
+
+    float s = dot(v, float4(F4));
+    float4 i = floor(v + s);
+    float t0 = dot(i, float4(G4));
+    float4 x0 = v - i + t0;
+
+    float4 rank = float4(0.0);
+    float3 isX = step(x0.yzw, x0.xxx);
+    float3 isYZ = step(x0.zww, x0.yyz);
+    rank.x = isX.x + isX.y + isX.z;
+    rank.yzw = 1.0 - isX;
+    rank.y += isYZ.x + isYZ.y;
+    rank.zw += 1.0 - isYZ.xy;
+    rank.z += isYZ.z;
+    rank.w += 1.0 - isYZ.z;
+
+    float4 i1 = clamp(rank - 2.0, 0.0, 1.0);
+    float4 i2 = clamp(rank - 1.0, 0.0, 1.0);
+    float4 i3 = clamp(rank, 0.0, 1.0);
+
+    float4 x1 = x0 - i1 + G4;
+    float4 x2 = x0 - i2 + 2.0 * G4;
+    float4 x3 = x0 - i3 + 3.0 * G4;
+    float4 x4 = x0 - 1.0 + 4.0 * G4;
+
+    float4 mi = mod289(i);
+    float j0 = perm4(perm4(perm4(perm4(mi.w) + mi.z) + mi.y) + mi.x);
+    float j1 = perm4(perm4(perm4(perm4(mi.w + i1.w) + mi.z + i1.z) + mi.y + i1.y) + mi.x + i1.x);
+    float j2 = perm4(perm4(perm4(perm4(mi.w + i2.w) + mi.z + i2.z) + mi.y + i2.y) + mi.x + i2.x);
+    float j3 = perm4(perm4(perm4(perm4(mi.w + i3.w) + mi.z + i3.z) + mi.y + i3.y) + mi.x + i3.x);
+    float j4 = perm4(perm4(perm4(perm4(mi.w + 1.0) + mi.z + 1.0) + mi.y + 1.0) + mi.x + 1.0);
+
+    float m0 = max(0.6 - dot(x0, x0), 0.0);
+    float m1 = max(0.6 - dot(x1, x1), 0.0);
+    float m2 = max(0.6 - dot(x2, x2), 0.0);
+    float m3 = max(0.6 - dot(x3, x3), 0.0);
+    float m4 = max(0.6 - dot(x4, x4), 0.0);
+
+    float4 g0 = grad4Symmetric(j0);
+    float4 g1 = grad4Symmetric(j1);
+    float4 g2 = grad4Symmetric(j2);
+    float4 g3 = grad4Symmetric(j3);
+    float4 g4 = grad4Symmetric(j4);
+
+    float4 d0123 = float4(dot(g0, x0), dot(g1, x1), dot(g2, x2), dot(g3, x3));
+    float d4 = dot(g4, x4);
+
+    float4 mv = float4(m0, m1, m2, m3);
+    float4 mv2 = mv * mv;
+    float4 mv4 = mv2 * mv2;
+    float m4_2 = m4 * m4;
+    float m4_4 = m4_2 * m4_2;
+
+    return (dot(mv4, d0123) + m4_4 * d4) * NOISE4_GAIN;
+}
+
+half4 main(float2 fragCoord) {
+    float safeScale = max(Scale, 1.0);
+    float2 u = (fragCoord - Offset) / safeScale;
+
+    float seedFrac = fract(RandomSeed * 0.1031) * 47.0 + fract(RandomSeed * 0.0379) * 31.0;
+    float revs = Evolution / 360.0;
+
+    float zCoord = 0.0;
+    float wCoord = 0.0;
+    if (CycleEvolution) {
+        float cycles = max(floor(CycleRevolutions + 0.5), 1.0);
+        float theta = 6.283185307179586 * (revs / cycles);
+        float radius = 0.75 * cycles;
+        zCoord = seedFrac + radius * cos(theta);
+        wCoord = seedFrac * 0.61803398875 + radius * sin(theta);
+    } else {
+        zCoord = seedFrac + revs * 0.75;
+        wCoord = seedFrac * 0.61803398875 + 3.14159265;
+    }
+
+    float comp = clamp(Complexity, 1.0, 10.0);
+    float noiseSum = 0.0;
+    float amp = 1.0;
+    float freq = 1.0;
+    float totalAmp = 0.0;
+
+    for (int oct = 0; oct < 10; oct++) {
+        float foct = float(oct);
+        float w = clamp(comp - foct, 0.0, 1.0);
+        if (w <= 0.0) break;
+
+        float oz = zCoord + foct * 7.13;
+        float ow = wCoord + foct * 11.71;
+
+        float n = snoise4(float4(u * freq, oz, ow));
+
+        if (FractalType > 0.5 && FractalType < 1.5) {
+            n = abs(n); // 1 = Turbulent Smooth
+        } else if (FractalType > 1.5 && FractalType < 2.5) {
+            n = abs(n) * 2.0 - 1.0; // 2 = Turbulent Basic
+        } else if (FractalType > 2.5 && FractalType < 3.5) {
+            n = 1.0 - 2.0 * abs(n); // 3 = Turbulent Sharp (Ridge)
+        } else if (FractalType > 3.5) {
+            n = n * abs(n); // 4 = Dynamic
+        }
+
+        noiseSum += w * amp * n;
+        totalAmp += w * amp;
+
+        amp *= 0.5;
+        freq *= 2.0;
+    }
+
+    float val = totalAmp > 0.0 ? (noiseSum / totalAmp) : 0.0;
+
+    // Remap from [-1, 1] to normalized [0, 1]
+    float v = val * 0.5 + 0.5;
+
+    // Apply Contrast & Brightness
+    float cFactor = Contrast / 100.0;
+    float bOffset = Brightness / 100.0;
+    v = (v - 0.5) * cFactor + 0.5 + bOffset;
+
+    // Apply Invert (black becomes white, white becomes black)
+    if (Invert > 0.5) {
+        v = 1.0 - v;
+    }
+
+    // Apply Overflow
+    if (Overflow < 0.5) {
+        v = clamp(v, 0.0, 1.0); // 0 = Clip
+    } else if (Overflow < 1.5) {
+        v = 1.0 / (1.0 + exp(-4.0 * (v - 0.5))); // 1 = Soft Clamp
+    } else {
+        v = fract(v); // 2 = Wrap
+    }
+
+    half4 src = layer.eval(fragCoord);
+    half3 noiseRgb = half3(v);
+    half3 finalRgb = mix(src.rgb, noiseRgb, half(clamp(Opacity, 0.0, 1.0)));
+
+    return half4(finalRgb, src.a);
+}

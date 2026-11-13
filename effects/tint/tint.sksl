@@ -1,0 +1,31 @@
+// Adobe After Effects "Tint" (ADBE Tint)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.2`):
+uniform half4 MapBlackTo;  // Color mapped to pure black luminance (default: RGB(0, 0, 0))
+uniform half4 MapWhiteTo;  // Color mapped to pure white luminance (default: RGB(255, 255, 255))
+uniform float Amount;      // Tint mix intensity (default: 1.0, range: 0.0 to 1.0)
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+    if (Amount <= 0.0 || src.a <= 0.0001) {
+        return src;
+    }
+
+    // Straight unmultiplied RGB for true perceptual luminance calculation
+    float alpha = float(src.a);
+    float3 straightRgb = float3(src.rgb) / max(alpha, 1.0e-4);
+
+    // Standard Adobe Rec. 601 perceptual luminance weighting: Y = 0.299 R + 0.587 G + 0.114 B
+    float lum = dot(straightRgb, float3(0.299, 0.587, 0.114));
+    half3 mapped = mix(MapBlackTo.rgb, MapWhiteTo.rgb, half(clamp(lum, 0.0, 1.0)));
+    half3 finalRgb = mix(half3(straightRgb), mapped, half(clamp(Amount, 0.0, 1.0)));
+
+    return half4(finalRgb * src.a, src.a);
+}

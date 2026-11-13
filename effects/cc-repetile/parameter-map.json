@@ -1,0 +1,80 @@
+{
+  "effectSlug": "cc-repetile",
+  "aeName": "CC RepeTile",
+  "aeMatchName": "ADBE CC RepeTile",
+  "aeCategory": "Distort",
+  "provenanceNote": "Reconstructs Adobe After Effects CC RepeTile using Cavalry 2.8+ GPU SkSL Filter with dynamic padding expansion and modular tiling math.",
+  "parameters": [
+    {
+      "id": "ExpandLeft",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Expand Left",
+      "default": 200.0,
+      "min": 0.0,
+      "max": 10000.0,
+      "unit": "pixels",
+      "description": "Number of pixels to expand and tile to the left."
+    },
+    {
+      "id": "ExpandRight",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Expand Right",
+      "default": 200.0,
+      "min": 0.0,
+      "max": 10000.0,
+      "unit": "pixels",
+      "description": "Number of pixels to expand and tile to the right."
+    },
+    {
+      "id": "ExpandUp",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Expand Up",
+      "default": 200.0,
+      "min": 0.0,
+      "max": 10000.0,
+      "unit": "pixels",
+      "description": "Number of pixels to expand and tile upwards."
+    },
+    {
+      "id": "ExpandDown",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Expand Down",
+      "default": 200.0,
+      "min": 0.0,
+      "max": 10000.0,
+      "unit": "pixels",
+      "description": "Number of pixels to expand and tile downwards."
+    },
+    {
+      "id": "Tiling",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Tiling",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Repeat" },
+        { "value": 1, "label": "Flip (Ping-Pong)" },
+        { "value": 2, "label": "Checker" },
+        { "value": 3, "label": "Brick" },
+        { "value": 4, "label": "Fold" },
+        { "value": 5, "label": "Unfold" }
+      ],
+      "description": "Mathematical tiling algorithm used across expanded borders."
+    },
+    {
+      "id": "BlendBorders",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Blend Borders",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Soft crossfading width across seam boundaries."
+    }
+  ]
+}

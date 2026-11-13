@@ -1,0 +1,71 @@
+{
+  "effectSlug": "cc-ball-action",
+  "displayName": "CC Ball Action",
+  "aeMatchName": "CC Ball Action",
+  "category": "Simulation",
+  "version": "1.1.0",
+  "implementationType": "skslFilter",
+  "description": "Reconstruction of Cycore FX CC Ball Action breaking layers into 3D-shaded spheres on a grid with 3D rotation and scatter.",
+  "parameters": [
+    {
+      "aeName": "Scatter",
+      "cavalryAttr": "inputs.0",
+      "cavalryAlias": "Scatter",
+      "type": "double",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1024.0,
+      "description": "Displacement distance of individual balls across the scatter vector field in pixels."
+    },
+    {
+      "aeName": "Rotation Axis",
+      "cavalryAttr": "inputs.1",
+      "cavalryAlias": "RotationAxis",
+      "type": "double",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 2.0,
+      "description": "3D Axis of rotation: 0=X, 1=Y, 2=Z."
+    },
+    {
+      "aeName": "Rotation Angle",
+      "cavalryAttr": "inputs.2",
+      "cavalryAlias": "RotationAngle",
+      "type": "double",
+      "default": 0.0,
+      "min": -360.0,
+      "max": 360.0,
+      "description": "3D Rotation angle in degrees."
+    },
+    {
+      "aeName": "Ball Size",
+      "cavalryAttr": "inputs.3",
+      "cavalryAlias": "BallSize",
+      "type": "double",
+      "default": 100.0,
+      "min": 0.0,
+      "max": 1000.0,
+      "description": "Radius percentage relative to grid spacing (100% touches grid borders)."
+    },
+    {
+      "aeName": "Grid Spacing",
+      "cavalryAttr": "inputs.4",
+      "cavalryAlias": "GridSpacing",
+      "type": "double",
+      "default": 10.0,
+      "min": 1.0,
+      "max": 100.0,
+      "description": "Center-to-center spacing of adjacent sphere cells in pixels."
+    },
+    {
+      "aeName": "Instability State",
+      "cavalryAttr": "inputs.5",
+      "cavalryAlias": "InstabilityState",
+      "type": "double",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 10000.0,
+      "description": "Pseudo-random seed for scattering."
+    }
+  ]
+}

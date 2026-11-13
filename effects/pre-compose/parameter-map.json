@@ -1,0 +1,15 @@
+{
+  "effectSlug": "pre-compose",
+  "aeName": "Pre-Compose",
+  "aeMatchName": "ADBE Pre-Compose",
+  "aeCategory": "Composition",
+  "provenanceNote": "Reconstructs Adobe After Effects Pre-Compose using Cavalry native api.preCompose(layerIds, name) producing a compositionReference node.",
+  "parameters": [
+    {
+      "id": "name",
+      "type": "string",
+      "aeName": "New Composition Name",
+      "description": "Name of the nested composition."
+    }
+  ]
+}

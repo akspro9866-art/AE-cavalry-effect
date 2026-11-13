@@ -1,0 +1,34 @@
+{
+  "effectSlug": "null-object",
+  "aeName": "Null Object",
+  "aeMatchName": "ADBE Null Object",
+  "aeCategory": "Layer",
+  "provenanceNote": "Reconstructs Adobe After Effects Null Object using native Cavalry 2.8 null layer, automatic centroid positioning, and layer parenting.",
+  "parameters": [
+    {
+      "id": "position",
+      "type": "double2",
+      "aeName": "Position",
+      "description": "2D Position of the Null Object in comp space."
+    },
+    {
+      "id": "rotation",
+      "type": "double",
+      "aeName": "Rotation",
+      "description": "Z-axis rotation angle in degrees."
+    },
+    {
+      "id": "scale",
+      "type": "double2",
+      "aeName": "Scale",
+      "description": "2D Scale factor."
+    },
+    {
+      "id": "nullColor",
+      "type": "color",
+      "aeName": "Color",
+      "default": { "r": 240, "g": 80, "b": 80, "a": 255 },
+      "description": "Viewport wireframe and handle color of the Null layer."
+    }
+  ]
+}

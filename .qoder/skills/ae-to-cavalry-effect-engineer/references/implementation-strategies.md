@@ -1,0 +1,18 @@
+# Implementation Strategy Decision Matrix
+
+Choose the Cavalry execution mechanism based on what the After Effects effect actually transforms, then verify APIs against `@scenery/cavalry-types` and `cavalry-mcp/data/api_reference.json`.
+
+| Primary Domain of AE Effect | First-Choice Cavalry Mechanism | Fallback / Companion | Why |
+|---|---|---|---|
+| **Pixel distortion, warps, color/blur/glow, fractal raster noise, displacement maps** (e.g. *Turbulent Displace*, *Wave Warp*, *Bulge*, *CC Bend It*, *Gaussian Blur*, *Directional Blur*, *Glow*, *Venetian Blinds*, *Motion Tile*, *Fractal Noise*, *Displacement Map*) | `skslFilter` (attached to target `filters`) | `javaScriptDeformer` (for pure outline shapes), native `blurFilter` / `distortionFilter` | Operates on rasterized pixels of **any** Cavalry layer (shape, text, image, group, precomp) including fills, gradients, strokes, and interior detail. |
+| **Pure vector contour / vertex manipulation requiring editable curves or Lottie compatibility** (e.g. *Roughen Edges* vector outline, outline *Turbulent Displace*, *Wiggle Paths*) | `javaScriptDeformer` (attached to shape `deformers`) | `skslFilter` (for text/groups/interior distortion) | Uses `def.getRootMesh()`, `path.convertToLines()`, `path.resample()` to perturb true Bezier/polygonal paths. Cannot distort bitmap interiors or flat gradients without dense meshes. |
+| **Procedural duplication & transform stepping** (e.g. *Repeater*, radial/grid array) | Native `duplicator` + `_mg` procedural rig | `javaScriptShape` | Native Cavalry instancing preserves live vector/material/stagger attributes cleanly and scales without expression overhead. |
+| **Temporal / attribute value expressions** (e.g. *Posterize Time*, *Wiggle*, property expressions, value *Offset*) | Native node attributes (`posterizeTime` / time utilities) or `javaScript` / `javaScriptModifier` | Animated keyframe baker when expression timing unsupported | Drives scalar/point attributes deterministically; probe node creation in live Cavalry (`cavalry_probe_api`) before committing. |
+| **Procedural generator layer with no source geometry** (e.g. standalone *Fractal Noise* plate) | `skslShader` / `skslFilter` on a fill rectangle or `javaScriptShape` | Native `noiseShader` | `skslShader` fills a shape cleanly with GPU procedural patterns. |
+
+## Verification Checklist Before Coding Any Mechanism
+
+1. Search `C:/Users/khada/cavalry-mcp/data/api_reference.json` for candidate native nodes/attributes first.
+2. Check `@scenery/cavalry-types/types/{deformer,modifier,shape,utility}.d.ts` for allowed globals in that expression context.
+3. For `skslFilter`: declare ONLY `uniform shader layer;` (do NOT declare `uniform float2 resolution;` — Cavalry's preamble injects it), treat `fragCoord` as centered `(0, 0)` with `+Y` up (`uv = (fragCoord / resolution) + 0.5`), use effect-prefixed `inputs.*` float names (avoiding `size`/`resolution`), bind via `inputs.0..N` on live Cavalry (stripping `uniform float` header lines when uploading `code` to live `skslFilter`) while retaining Mock `uniforms.*` and `const float` fallbacks, configure `padding: { x, y }` for bounds expansion, and use branchless SIMD math + constant loop bounds.
+4. For `javaScriptDeformer`: confirm `ctx.frame`/`ctx.time` are **never** assumed (drive time via dynamic `array.*` attributes), use `def.getRootMesh()` -> `mesh.count()` / `getPathAtIndex()` -> `path.resample()` + `path.pathData()` + `path.setPathData()` -> `mesh.setPathAtIndex()` -> `def.setRootMesh()` + `def.getFalloffAtPoint()`, and keep zero references to `api`/`ui`/`render`.

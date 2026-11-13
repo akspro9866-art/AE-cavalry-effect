@@ -1,0 +1,88 @@
+// Adobe After Effects "CC RepeTile" (ADBE CC RepeTile)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform float ExpandLeft;    // Expansion distance to the left in pixels
+uniform float ExpandRight;   // Expansion distance to the right in pixels
+uniform float ExpandUp;      // Expansion distance upwards in pixels
+uniform float ExpandDown;    // Expansion distance downwards in pixels
+uniform float Tiling;        // 0=Repeat, 1=Flip, 2=Checker, 3=Brick, 4=Fold, 5=Unfold
+uniform float BlendBorders;  // Soft seam crossfading width (0.0 to 1.0)
+
+half4 main(float2 fragCoord) {
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+
+    // Strict After Effects directional bounding box expansion check
+    // Pixels outside the specifically configured directional boundaries remain empty (alpha 0)
+    if (fragCoord.x < -halfRes.x - max(0.0, ExpandLeft) ||
+        fragCoord.x >  halfRes.x + max(0.0, ExpandRight) ||
+        fragCoord.y < -halfRes.y - max(0.0, ExpandUp) ||
+        fragCoord.y >  halfRes.y + max(0.0, ExpandDown)) {
+        return half4(0.0);
+    }
+
+    float2 uv = (fragCoord / res) + float2(0.5);
+
+    // If inside original layer bounds and no expansion active, pass through
+    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0 &&
+        ExpandLeft <= 0.0 && ExpandRight <= 0.0 && ExpandUp <= 0.0 && ExpandDown <= 0.0) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 mappedUv = uv;
+    float mode = floor(Tiling + 0.5);
+
+    if (mode < 0.5) {
+        // 0 = Repeat (Standard periodic tiling)
+        mappedUv = uv - floor(uv);
+    } else if (mode < 1.5) {
+        // 1 = Flip (Mirror reflection across seams - ping pong)
+        float2 k = floor(uv);
+        float2 f = uv - k;
+        float mx = mod(abs(k.x), 2.0);
+        float my = mod(abs(k.y), 2.0);
+        mappedUv.x = (mx == 0.0) ? f.x : (1.0 - f.x);
+        mappedUv.y = (my == 0.0) ? f.y : (1.0 - f.y);
+    } else if (mode < 2.5) {
+        // 2 = Checker (Alternating checkerboard tiles)
+        float2 k = floor(uv);
+        float2 f = uv - k;
+        float chk = mod(abs(k.x + k.y), 2.0);
+        mappedUv.x = (chk == 0.0) ? f.x : (1.0 - f.x);
+        mappedUv.y = (chk == 0.0) ? f.y : (1.0 - f.y);
+    } else if (mode < 3.5) {
+        // 3 = Brick (Staggered 50% horizontal offset on alternate rows)
+        float ky = floor(uv.y);
+        float shift = (mod(abs(ky), 2.0) == 0.0) ? 0.0 : 0.5;
+        float2 shifted = float2(uv.x + shift, uv.y);
+        mappedUv = shifted - floor(shifted);
+    } else if (mode < 4.5) {
+        // 4 = Fold (Symmetric inward fold)
+        mappedUv = abs(fract(uv * 0.5 + 0.5) * 2.0 - 1.0);
+    } else {
+        // 5 = Unfold (Outward unfold)
+        mappedUv = 1.0 - abs(fract(uv * 0.5) * 2.0 - 1.0);
+    }
+
+    float2 sampleCoord = (mappedUv - float2(0.5)) * res;
+    half4 color = layer.eval(sampleCoord);
+
+    // Optional seam blending
+    if (BlendBorders > 0.001) {
+        float seamW = BlendBorders * 0.12;
+        float dX = min(mappedUv.x, 1.0 - mappedUv.x);
+        float dY = min(mappedUv.y, 1.0 - mappedUv.y);
+        float edgeDist = min(dX, dY);
+        float blend = smoothstep(0.0, seamW, edgeDist);
+        color.a *= half(blend);
+    }
+
+    return color;
+}

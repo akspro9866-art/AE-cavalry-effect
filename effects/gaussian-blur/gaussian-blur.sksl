@@ -1,0 +1,87 @@
+// Adobe After Effects "Gaussian Blur" (ADBE Gaussian Blur 2)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.2`):
+uniform float Blurriness;        // Standard deviation / blur radius in pixels (default: 50.0)
+uniform float BlurDimensions;    // 0 = Horizontal and Vertical, 1 = Horizontal Only, 2 = Vertical Only
+uniform float RepeatEdgePixels;  // 0 = Off, 1 = On (clamps sampling to border to prevent edge darkening)
+
+half4 sampleClamped(float2 coord, float2 halfRes, bool repeatEdges) {
+    if (repeatEdges) {
+        float2 c = clamp(coord, -halfRes + 0.5, halfRes - 0.5);
+        return layer.eval(c);
+    }
+    if (abs(coord.x) > halfRes.x || abs(coord.y) > halfRes.y) {
+        return half4(0.0);
+    }
+    return layer.eval(coord);
+}
+
+half4 main(float2 fragCoord) {
+    if (Blurriness <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+    bool repeatEdges = (RepeatEdgePixels > 0.5);
+
+    // Standard After Effects Gaussian Blur standard deviation mapping
+    float sigma = max(Blurriness * 0.5, 0.5);
+    float twoSigmaSq = 2.0 * sigma * sigma;
+
+    float dim = floor(BlurDimensions + 0.5);
+
+    half4 accum = half4(0.0);
+    float totalWeight = 0.0;
+
+    // Center tap
+    half4 centerSample = sampleClamped(fragCoord, halfRes, repeatEdges);
+    accum += centerSample;
+    totalWeight += 1.0;
+
+    if (dim > 0.5 && dim < 1.5) {
+        // 1 = Horizontal Only (32-tap Gaussian kernel)
+        for (int i = 1; i <= 32; i++) {
+            float dist = float(i) * (sigma * 3.0 / 32.0);
+            float w = exp(-(dist * dist) / twoSigmaSq);
+            half4 s1 = sampleClamped(fragCoord + float2(dist, 0.0), halfRes, repeatEdges);
+            half4 s2 = sampleClamped(fragCoord - float2(dist, 0.0), halfRes, repeatEdges);
+            accum += (s1 + s2) * half(w);
+            totalWeight += 2.0 * w;
+        }
+    } else if (dim > 1.5) {
+        // 2 = Vertical Only (32-tap Gaussian kernel)
+        for (int i = 1; i <= 32; i++) {
+            float dist = float(i) * (sigma * 3.0 / 32.0);
+            float w = exp(-(dist * dist) / twoSigmaSq);
+            half4 s1 = sampleClamped(fragCoord + float2(0.0, dist), halfRes, repeatEdges);
+            half4 s2 = sampleClamped(fragCoord - float2(0.0, dist), halfRes, repeatEdges);
+            accum += (s1 + s2) * half(w);
+            totalWeight += 2.0 * w;
+        }
+    } else {
+        // 0 = Horizontal and Vertical (36-tap Vogel Golden-Spiral Isotropic Gaussian Kernel)
+        // Uniform 2D disc dispersion without concentric ring artifacts
+        float maxR = sigma * 3.0;
+        for (int i = 0; i < 36; i++) {
+            float fi = float(i);
+            float r = maxR * sqrt((fi + 0.5) / 36.0);
+            float phi = fi * 2.39996323; // Golden angle in radians
+            float2 offset = float2(cos(phi), sin(phi)) * r;
+
+            float w = exp(-(r * r) / twoSigmaSq);
+            half4 s = sampleClamped(fragCoord + offset, halfRes, repeatEdges);
+            accum += s * half(w);
+            totalWeight += w;
+        }
+    }
+
+    return accum / half(totalWeight);
+}

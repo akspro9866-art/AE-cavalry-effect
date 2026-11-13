@@ -1,0 +1,36 @@
+{
+  "effectSlug": "tint",
+  "aeName": "Tint",
+  "aeMatchName": "ADBE Tint",
+  "aeCategory": "Color Correction",
+  "provenanceNote": "Reconstructs Adobe After Effects Tint using Cavalry 2.8+ GPU SkSL Filter with Rec. 601 perceptual luminance mapping.",
+  "parameters": [
+    {
+      "id": "MapBlackTo",
+      "slot": "inputs.0",
+      "type": "color",
+      "aeName": "Map Black To",
+      "default": { "r": 0, "g": 0, "b": 0, "a": 255 },
+      "description": "Color mapped to shadow / zero luminance regions."
+    },
+    {
+      "id": "MapWhiteTo",
+      "slot": "inputs.1",
+      "type": "color",
+      "aeName": "Map White To",
+      "default": { "r": 255, "g": 255, "b": 255, "a": 255 },
+      "description": "Color mapped to highlight / full luminance regions."
+    },
+    {
+      "id": "Amount",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Amount to Tint",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "normalized",
+      "description": "Blend factor between original image and tinted result."
+    }
+  ]
+}

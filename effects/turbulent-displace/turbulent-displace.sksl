@@ -1,0 +1,271 @@
+// Adobe After Effects "Turbulent Displace" (ADBE Turbulent Displace)
+// Independent mathematical reconstruction implemented as a Cavalry 2.8+ SkSL Filter (`skslFilter`).
+// Built-in Cavalry preamble uniform (injected automatically by Cavalry — do NOT redeclare):
+//   `resolution` (float2) — Layer bounding dimensions in pixels (centered Y-up coordinate space)
+uniform shader layer;
+
+// AE Main Controls (mapped to Cavalry `inputs.0`..`inputs.11` dynamic attributes on live Cavalry;
+// stripped when uploading `code` to live `skslFilter`, kept here for static validation & Mock runtime):
+// Displacement: 0=Turbulent, 1=Bulge, 2=Twist, 3=Turbulent Smoother, 4=Bulge Smoother,
+//               5=Twist Smoother, 6=Horizontal Displacement, 7=Vertical Displacement, 8=Cross Displacement
+uniform float Displacement;
+uniform float Amount;
+uniform float Size;
+uniform float2 Offset;
+uniform float Complexity;
+uniform float Evolution;
+// Evolution Options (sub-group):
+uniform bool CycleEvolution;
+uniform float CycleRevolutions;
+uniform float RandomSeed;
+// Edges / Quality:
+// Pinning: 0=None, 1=All, 2=Horizontal Only, 3=Vertical Only, 4=Left, 5=Right, 6=Top, 7=Bottom
+uniform float Pinning;
+uniform bool ResizeLayer;
+// Antialiasing for Best Quality: 0=Low (bilinear), 1=High (4-tap RGSS supersampled backward warp)
+uniform float Antialiasing;
+
+float4 mod289(float4 x) {
+    return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+float mod289(float x) {
+    return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+float perm4(float x) {
+    float w = mod289(x);
+    return mod289(((w * 34.0) + 1.0) * w);
+}
+
+// Perlin canonical symmetric 32-vector 4D gradient table without array lookups or sin()
+float4 grad4Symmetric(float j) {
+    float idx = floor(j - floor(j * 0.03125) * 32.0);
+    float s0 = 1.0 - 2.0 * step(0.25, fract(idx * 0.5));
+    float s1 = 1.0 - 2.0 * step(0.25, fract(floor(idx * 0.5) * 0.5));
+    float s2 = 1.0 - 2.0 * step(0.25, fract(floor(idx * 0.25) * 0.5));
+    float z = floor(idx * 0.125);
+    float z0 = 1.0 - step(0.5, abs(z - 0.0));
+    float z1 = 1.0 - step(0.5, abs(z - 1.0));
+    float z2 = 1.0 - step(0.5, abs(z - 2.0));
+    float z3 = 1.0 - step(0.5, abs(z - 3.0));
+    return z0 * float4(0.0, s0, s1, s2)
+         + z1 * float4(s0, 0.0, s1, s2)
+         + z2 * float4(s0, s1, 0.0, s2)
+         + z3 * float4(s0, s1, s2, 0.0);
+}
+
+// Branchless SIMD 4D Simplex Noise returning float3(value, dN/dx, dN/dy)
+float3 snoise4Grad(float4 v) {
+    float F4 = 0.309016994374947451;
+    float G4 = 0.1381966011250105;
+    float NOISE4_GAIN = 27.0;
+
+    float s = dot(v, float4(F4));
+    float4 i = floor(v + s);
+    float t0 = dot(i, float4(G4));
+    float4 x0 = v - i + t0;
+
+    float4 rank = float4(0.0);
+    float3 isX = step(x0.yzw, x0.xxx);
+    float3 isYZ = step(x0.zww, x0.yyz);
+    rank.x = isX.x + isX.y + isX.z;
+    rank.yzw = 1.0 - isX;
+    rank.y += isYZ.x + isYZ.y;
+    rank.zw += 1.0 - isYZ.xy;
+    rank.z += isYZ.z;
+    rank.w += 1.0 - isYZ.z;
+
+    float4 i1 = clamp(rank - 2.0, 0.0, 1.0);
+    float4 i2 = clamp(rank - 1.0, 0.0, 1.0);
+    float4 i3 = clamp(rank, 0.0, 1.0);
+
+    float4 x1 = x0 - i1 + G4;
+    float4 x2 = x0 - i2 + 2.0 * G4;
+    float4 x3 = x0 - i3 + 3.0 * G4;
+    float4 x4 = x0 - 1.0 + 4.0 * G4;
+
+    float4 mi = mod289(i);
+    float j0 = perm4(perm4(perm4(perm4(mi.w) + mi.z) + mi.y) + mi.x);
+    float j1 = perm4(perm4(perm4(perm4(mi.w + i1.w) + mi.z + i1.z) + mi.y + i1.y) + mi.x + i1.x);
+    float j2 = perm4(perm4(perm4(perm4(mi.w + i2.w) + mi.z + i2.z) + mi.y + i2.y) + mi.x + i2.x);
+    float j3 = perm4(perm4(perm4(perm4(mi.w + i3.w) + mi.z + i3.z) + mi.y + i3.y) + mi.x + i3.x);
+    float j4 = perm4(perm4(perm4(perm4(mi.w + 1.0) + mi.z + 1.0) + mi.y + 1.0) + mi.x + 1.0);
+
+    float m0 = max(0.6 - dot(x0, x0), 0.0);
+    float m1 = max(0.6 - dot(x1, x1), 0.0);
+    float m2 = max(0.6 - dot(x2, x2), 0.0);
+    float m3 = max(0.6 - dot(x3, x3), 0.0);
+    float m4 = max(0.6 - dot(x4, x4), 0.0);
+
+    float4 g0 = grad4Symmetric(j0);
+    float4 g1 = grad4Symmetric(j1);
+    float4 g2 = grad4Symmetric(j2);
+    float4 g3 = grad4Symmetric(j3);
+    float4 g4 = grad4Symmetric(j4);
+
+    float4 d0123 = float4(dot(g0, x0), dot(g1, x1), dot(g2, x2), dot(g3, x3));
+    float d4 = dot(g4, x4);
+
+    float4 mv = float4(m0, m1, m2, m3);
+    float4 mv2 = mv * mv;
+    float4 mv3 = mv2 * mv;
+    float4 mv4 = mv2 * mv2;
+    float m4_2 = m4 * m4;
+    float m4_3 = m4_2 * m4;
+    float m4_4 = m4_2 * m4_2;
+
+    float val = dot(mv4, d0123) + m4_4 * d4;
+    float2 gxy = -8.0 * (
+        mv3.x * d0123.x * x0.xy +
+        mv3.y * d0123.y * x1.xy +
+        mv3.z * d0123.z * x2.xy +
+        mv3.w * d0123.w * x3.xy +
+        m4_3 * d4 * x4.xy
+    ) + (
+        mv4.x * g0.xy +
+        mv4.y * g1.xy +
+        mv4.z * g2.xy +
+        mv4.w * g3.xy +
+        m4_4 * g4.xy
+    );
+
+    return float3(val, gxy.x, gxy.y) * NOISE4_GAIN;
+}
+
+float computePinWeight(float2 uv, float2 res) {
+    float mode = floor(clamp(Pinning, 0.0, 7.0) + 0.5);
+    if (mode < 0.5) return 1.0;
+
+    float2 margin = clamp(
+        max(float2(abs(Amount) * 1.15), max(float2(Size * 0.35), float2(16.0))) / res,
+        float2(0.03),
+        float2(0.48)
+    );
+    float pinL = smoothstep(0.0, margin.x, uv.x);
+    float pinR = smoothstep(0.0, margin.x, 1.0 - uv.x);
+    // Cavalry `skslFilter` coordinate space is Y-up: uv.y=0 is bottom, uv.y=1 is top
+    float pinB = smoothstep(0.0, margin.y, uv.y);
+    float pinT = smoothstep(0.0, margin.y, 1.0 - uv.y);
+
+    if (mode < 1.5) return pinL * pinR * pinT * pinB; // 1 = All
+    if (mode < 2.5) return pinL * pinR;               // 2 = Horizontal Only
+    if (mode < 3.5) return pinT * pinB;               // 3 = Vertical Only
+    if (mode < 4.5) return pinL;                      // 4 = Left
+    if (mode < 5.5) return pinR;                      // 5 = Right
+    if (mode < 6.5) return pinT;                      // 6 = Top
+    return pinB;                                      // 7 = Bottom
+}
+
+float2 evaluateDisplacement(float2 px, float2 res) {
+    if (Amount == 0.0) return float2(0.0);
+
+    float mode = floor(clamp(Displacement, 0.0, 8.0) + 0.5);
+    float isSmoother = (mode >= 2.5 && mode <= 5.5) ? 1.0 : 0.0;
+    float baseMode = isSmoother > 0.5 ? (mode - 3.0) : mode;
+
+    float safeSize = max(Size, 0.001) * (isSmoother > 0.5 ? 1.38 : 1.0);
+    // Centered layer coordinates: (0, 0) is layer center in Cavalry `skslFilter`
+    float2 center = Offset;
+    float2 u = (px - center) / safeSize;
+
+    float seedFrac = fract(RandomSeed * 0.1031) * 47.0 + fract(RandomSeed * 0.0379) * 31.0;
+    float revs = Evolution / 360.0;
+
+    float zCoord = 0.0;
+    float wCoord = 0.0;
+    if (CycleEvolution) {
+        float cycles = max(floor(CycleRevolutions + 0.5), 1.0);
+        float theta = 6.283185307179586 * (revs / cycles);
+        float radius = 0.75 * cycles;
+        zCoord = seedFrac + radius * cos(theta);
+        wCoord = seedFrac * 0.61803398875 + radius * sin(theta);
+    } else {
+        zCoord = seedFrac + revs * 0.75;
+        wCoord = seedFrac * 0.61803398875 + 3.14159265;
+    }
+
+    float comp = clamp(Complexity, 1.0, 10.0);
+    float gain = isSmoother > 0.5 ? 0.38 : 0.5;
+    float derivGain = isSmoother > 0.5 ? 0.30 : 0.42;
+    float needChannelB = (baseMode < 0.5 || (baseMode > 6.5 && baseMode < 7.5) || baseMode > 7.5) ? 1.0 : 0.0;
+
+    float sumAx = 0.0;
+    float2 gradAx = float2(0.0);
+    float sumB = 0.0;
+    float amp = 1.0;
+    float dAmp = 1.0;
+    float freq = 1.0;
+
+    for (int oct = 0; oct < 10; oct++) {
+        float foct = float(oct);
+        float w = clamp(comp - foct, 0.0, 1.0);
+        if (w <= 0.0) break;
+
+        float oz = zCoord + foct * 7.13;
+        float ow = wCoord + foct * 11.71;
+
+        float3 nA = snoise4Grad(float4(u * freq, oz, ow));
+        sumAx += w * amp * nA.x;
+        gradAx += w * dAmp * nA.yz;
+
+        if (needChannelB > 0.5) {
+            float3 nB = snoise4Grad(float4(u * freq + float2(19.31, 43.17), oz + 23.7, ow + 5.9));
+            sumB += w * amp * nB.x;
+        }
+
+        amp *= gain;
+        dAmp *= derivGain;
+        freq *= 2.0;
+    }
+
+    float compScale = 1.0 / (1.0 + 0.22 * (log(comp) / 0.69314718));
+    float strength = Amount * 0.62 * compScale;
+
+    float2 rawDisp = float2(0.0);
+    if (baseMode < 0.5) {
+        rawDisp = float2(sumAx, sumB);
+    } else if (baseMode < 1.5) {
+        rawDisp = -gradAx * 0.26;
+    } else if (baseMode < 2.5) {
+        rawDisp = float2(-gradAx.y, gradAx.x) * 0.28;
+    } else if (baseMode < 6.5) {
+        rawDisp = float2(sumAx, 0.0); // 6 = Horizontal Displacement
+    } else if (baseMode < 7.5) {
+        rawDisp = float2(0.0, sumB);  // 7 = Vertical Displacement
+    } else {
+        float ax = abs(sumAx);
+        float ay = abs(sumB);
+        float wx = ax / (ax + ay + 0.08);
+        float wy = ay / (ax + ay + 0.08);
+        rawDisp = float2(sumAx * (0.45 + 0.85 * wx), sumB * (0.45 + 0.85 * wy));
+    }
+
+    float2 uv = clamp((px / res) + float2(0.5), float2(0.0), float2(1.0));
+    float pinW = computePinWeight(uv, res);
+    return rawDisp * strength * pinW;
+}
+
+half4 main(float2 fragCoord) {
+    float2 res = max(resolution, float2(1.0, 1.0));
+    if (Amount == 0.0) {
+        return layer.eval(fragCoord);
+    }
+
+    if (Antialiasing < 0.5) {
+        float2 disp = evaluateDisplacement(fragCoord, res);
+        return layer.eval(fragCoord - disp);
+    }
+
+    // High Quality: 4-tap Rotated Grid Supersampling (RGSS) backward-warped evaluation
+    float2 q0 = fragCoord + float2( 0.375,  0.125);
+    float2 q1 = fragCoord + float2(-0.375, -0.125);
+    float2 q2 = fragCoord + float2(-0.125,  0.375);
+    float2 q3 = fragCoord + float2( 0.125, -0.375);
+
+    half4 acc = layer.eval(q0 - evaluateDisplacement(q0, res))
+              + layer.eval(q1 - evaluateDisplacement(q1, res))
+              + layer.eval(q2 - evaluateDisplacement(q2, res))
+              + layer.eval(q3 - evaluateDisplacement(q3, res));
+    return acc * half(0.25);
+}

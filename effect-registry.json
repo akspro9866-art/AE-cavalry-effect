@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "1.0.0",
+  "libraryRoot": "C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects",
+  "infrastructure": {
+    "cavalryMcp": "C:/Users/khada/cavalry-mcp",
+    "stallion": "C:/Users/khada/stallion",
+    "stallionUrl": "http://127.0.0.1:8080"
+  },
+  "effects": {
+    "turbulent-displace": {
+      "version": "1.1.0",
+      "aeName": "Turbulent Displace",
+      "aeMatchName": "ADBE Turbulent Displace",
+      "aeCategory": "Distort",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "secondaryStrategy": "javascript-deformer",
+      "cavalryNodeTypes": [
+        "skslFilter",
+        "javaScriptDeformer"
+      ],
+      "entryScript": "effects/turbulent-displace/implementation.js",
+      "artifacts": {
+        "skill": "effects/turbulent-displace/SKILL.md",
+        "sksl": "effects/turbulent-displace/turbulent-displace.sksl",
+        "deformer": "effects/turbulent-displace/turbulent-displace.deformer.js",
+        "parameterMap": "effects/turbulent-displace/parameter-map.json",
+        "technicalNotes": "effects/turbulent-displace/technical-notes.md",
+        "testReport": "effects/turbulent-displace/test-report.md",
+        "readme": "effects/turbulent-displace/README.md"
+      },
+      "aliases": [
+        "turbulent displace",
+        "turbulent_displace",
+        "adbe turbulent displace",
+        "turb displace"
+      ]
+    },
+    "deep-glow": {
+      "version": "1.0.0",
+      "aeName": "Deep Glow",
+      "aeMatchName": "ADBE Deep Glow",
+      "aeCategory": "Stylize",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "cavalryNodeTypes": [
+        "skslFilter"
+      ],
+      "entryScript": "effects/deep-glow/implementation.js",
+      "artifacts": {
+        "skill": "effects/deep-glow/SKILL.md",
+        "sksl": "effects/deep-glow/deep-glow.sksl",
+        "parameterMap": "effects/deep-glow/parameter-map.json",
+        "technicalNotes": "effects/deep-glow/technical-notes.md",
+        "testReport": "effects/deep-glow/test-report.md",
+        "readme": "effects/deep-glow/README.md"
+      },
+      "aliases": [
+        "deep glow",
+        "deepglow",
+        "deep_glow",
+        "adbe deep glow"
+      ]
+    },
+    "null-object": {
+      "version": "1.0.0",
+      "aeName": "Null Object",
+      "aeMatchName": "ADBE Null Object",
+      "aeCategory": "Layer",
+      "status": "live-verified",
+      "primaryStrategy": "native-node",
+      "cavalryNodeTypes": [
+        "null"
+      ],
+      "entryScript": "effects/null-object/implementation.js",
+      "artifacts": {
+        "parameterMap": "effects/null-object/parameter-map.json",
+        "readme": "effects/null-object/README.md"
+      },
+      "aliases": [
+        "null object",
+        "null",
+        "ae null",
+        "adbe null object"
+      ]
+    },
+    "adjustment-layer": {
+      "version": "1.0.0",
+      "aeName": "Adjustment Layer",
+      "aeMatchName": "ADBE Adjustment Layer",
+      "aeCategory": "Layer",
+      "status": "live-verified",
+      "primaryStrategy": "group-filter",
+      "cavalryNodeTypes": [
+        "group",
+        "skslFilter"
+      ],
+      "entryScript": "effects/adjustment-layer/implementation.js",
+      "artifacts": {
+        "parameterMap": "effects/adjustment-layer/parameter-map.json",
+        "readme": "effects/adjustment-layer/README.md"
+      },
+      "aliases": [
+        "adjustment layer",
+        "adjustment",
+        "adj layer",
+        "adbe adjustment layer"
+      ]
+    },
+    "pre-compose": {
+      "version": "1.0.0",
+      "aeName": "Pre-Compose",
+      "aeMatchName": "ADBE Pre-Compose",
+      "aeCategory": "Composition",
+      "status": "live-verified",
+      "primaryStrategy": "native-api",
+      "cavalryNodeTypes": [
+        "compositionReference"
+      ],
+      "entryScript": "effects/pre-compose/implementation.js",
+      "artifacts": {
+        "parameterMap": "effects/pre-compose/parameter-map.json",
+        "readme": "effects/pre-compose/README.md"
+      },
+      "aliases": [
+        "pre-compose",
+        "precompose",
+        "pre comp",
+        "precomp",
+        "adbe pre-compose"
+      ]
+    },
+    "cc-repetile": {
+      "version": "1.0.0",
+      "aeName": "CC RepeTile",
+      "aeMatchName": "ADBE CC RepeTile",
+      "aeCategory": "Distort",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "cavalryNodeTypes": [
+        "skslFilter"
+      ],
+      "entryScript": "effects/cc-repetile/implementation.js",
+      "artifacts": {
+        "sksl": "effects/cc-repetile/cc-repetile.sksl",
+        "parameterMap": "effects/cc-repetile/parameter-map.json",
+        "technicalNotes": "effects/cc-repetile/technical-notes.md",
+        "readme": "effects/cc-repetile/README.md"
+      },
+      "aliases": [
+        "cc repetile",
+        "repetile",
+        "repe tile",
+        "adbe cc repetile"
+      ]
+    },
+    "gaussian-blur": {
+      "version": "1.0.0",
+      "aeName": "Gaussian Blur",
+      "aeMatchName": "ADBE Gaussian Blur 2",
+      "aeCategory": "Blur & Sharpen",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "cavalryNodeTypes": [
+        "skslFilter"
+      ],
+      "entryScript": "effects/gaussian-blur/implementation.js",
+      "artifacts": {
+        "sksl": "effects/gaussian-blur/gaussian-blur.sksl",
+        "parameterMap": "effects/gaussian-blur/parameter-map.json",
+        "readme": "effects/gaussian-blur/README.md"
+      },
+      "aliases": [
+        "gaussian blur",
+        "gaussian_blur",
+        "adbe gaussian blur 2",
+        "blur"
+      ]
+    },
+    "fractal-noise": {
+      "version": "1.0.0",
+      "aeName": "Fractal Noise",
+      "aeMatchName": "ADBE Fractal Noise",
+      "aeCategory": "Noise & Grain",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "cavalryNodeTypes": [
+        "skslFilter"
+      ],
+      "entryScript": "effects/fractal-noise/implementation.js",
+      "artifacts": {
+        "sksl": "effects/fractal-noise/fractal-noise.sksl",
+        "parameterMap": "effects/fractal-noise/parameter-map.json",
+        "readme": "effects/fractal-noise/README.md"
+      },
+      "aliases": [
+        "fractal noise",
+        "fractal_noise",
+        "adbe fractal noise"
+      ]
+    },
+    "tint": {
+      "version": "1.0.0",
+      "aeName": "Tint",
+      "aeMatchName": "ADBE Tint",
+      "aeCategory": "Color Correction",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "cavalryNodeTypes": [
+        "skslFilter"
+      ],
+      "entryScript": "effects/tint/implementation.js",
+      "artifacts": {
+        "sksl": "effects/tint/tint.sksl",
+        "parameterMap": "effects/tint/parameter-map.json",
+        "readme": "effects/tint/README.md"
+      },
+      "aliases": [
+        "tint",
+        "adbe tint",
+        "map black map white"
+      ]
+    },
+    "cc-ball-action": {
+      "version": "1.0.0",
+      "aeName": "CC Ball Action",
+      "aeMatchName": "CC Ball Action",
+      "aeCategory": "Simulation",
+      "status": "live-verified",
+      "primaryStrategy": "sksl-filter",
+      "cavalryNodeTypes": [
+        "skslFilter"
+      ],
+      "entryScript": "effects/cc-ball-action/implementation.js",
+      "artifacts": {
+        "sksl": "effects/cc-ball-action/cc-ball-action.sksl",
+        "parameterMap": "effects/cc-ball-action/parameter-map.json",
+        "technicalNotes": "effects/cc-ball-action/technical-notes.md",
+        "readme": "effects/cc-ball-action/README.md"
+      },
+      "aliases": [
+        "cc ball action",
+        "cc ball",
+        "ball action",
+        "ballaction"
+      ]
+    }
+  }
+}
