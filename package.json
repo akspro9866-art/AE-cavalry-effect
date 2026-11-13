@@ -25,7 +25,7 @@
   "author": "akspro9866-art",
   "license": "MIT",
   "scripts": {
-    "test": "node --test test/**/*.test.mjs",
+    "test": "node scripts/run-tests.mjs",
     "test:live": "node scripts/live-verify-all-effects.mjs",
     "sync:embedded": "node scripts/sync-embedded.mjs",
     "sync:agents": "node scripts/sync-agent-configs.mjs",
