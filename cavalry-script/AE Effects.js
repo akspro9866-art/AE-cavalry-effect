@@ -291,16 +291,16 @@
     }
 ];
     var BUNDLED_MTIMES = {
-    "gaussian-blur": 1794587946000,
-    "tint": 1794588000000,
-    "pre-compose": 1794587891000,
-    "cc-repetile": 1794588030000,
-    "turbulent-displace": 1794588868000,
-    "adjustment-layer": 1794587862000,
-    "null-object": 1794587835000,
-    "fractal-noise": 1794587976000,
-    "cc-ball-action": 1794587917000,
-    "deep-glow": 1794588797000
+    "gaussian-blur": 0,
+    "tint": 0,
+    "pre-compose": 0,
+    "cc-repetile": 0,
+    "turbulent-displace": 0,
+    "adjustment-layer": 0,
+    "null-object": 0,
+    "fractal-noise": 0,
+    "cc-ball-action": 0,
+    "deep-glow": 0
 };
 
     var BUNDLED_RUNNERS = {
@@ -3999,7 +3999,7 @@
 
     var libraryRoot = DEFAULT_LIBRARY_ROOT;
     var registryPath = DEFAULT_LIBRARY_ROOT + '/effect-registry.json';
-    var lastRegistryMtime = 1794588456000;
+    var lastRegistryMtime = 0;
     var isApplying = false;
 
     function safeCall(fn, fallback) {

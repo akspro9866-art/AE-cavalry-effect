@@ -109,7 +109,7 @@ export function collectEffectsForScript(libraryRoot = ROOT, options = {}) {
 export function buildCavalryScriptSource({
     effects,
     libraryRoot = ROOT,
-    registryMtime = null,
+    registryMtime = 0,
     panelTemplatePath = PANEL_TEMPLATE_PATH,
 }) {
     const isCustomLibRoot = libraryRoot && path.resolve(libraryRoot) !== ROOT;
@@ -131,7 +131,7 @@ export function buildCavalryScriptSource({
 
     const bundledMtimes = {};
     for (const e of effects) {
-        if (e.mtime !== null && e.mtime !== undefined) bundledMtimes[e.slug] = e.mtime;
+        bundledMtimes[e.slug] = 0;
     }
 
     const runnerEntries = effects.map((e) => {
@@ -174,7 +174,7 @@ export function buildCavalryScriptSource({
         ['/* @@BUNDLED_EFFECTS@@ */', JSON.stringify(catalogMeta, null, 4)],
         ['/* @@BUNDLED_MTIMES@@ */', JSON.stringify(bundledMtimes, null, 4)],
         ['/* @@BUNDLED_RUNNERS@@ */', runnerEntries],
-        ['/* @@REGISTRY_MTIME@@ */', JSON.stringify(registryMtime)],
+        ['/* @@REGISTRY_MTIME@@ */', '0'],
     ];
 
     for (const [token, val] of replacements) {
