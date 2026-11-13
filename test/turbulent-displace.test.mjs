@@ -341,7 +341,7 @@ test('Tier 1 & 3 — Library templates validation and CLI mock runner integratio
         assert.equal(validateCavalryContextUsage(tplDef, 'javaScriptDeformer').valid, true);
     } else {
         assert.ok(tplSksl.includes('uniform shader layer;'));
-        assert.ok(tplDef.includes('cavalry.Path'));
+        assert.ok(tplDef.includes('cavalry.noise2d'));
     }
 
     const cliOut = execFileSync(
