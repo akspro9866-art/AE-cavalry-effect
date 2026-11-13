@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveProjectRoot } from './lib/config.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const effectsDir = path.join(ROOT, 'effects');
+const ROOT = resolveProjectRoot();
+const EFFECTS_DIR = path.join(ROOT, 'effects');
 
 const replaceBlock = (text, beginMarker, endMarker, varName, payload, filePath) => {
     const startIdx = text.indexOf(beginMarker);
@@ -17,29 +18,67 @@ const replaceBlock = (text, beginMarker, endMarker, varName, payload, filePath) 
     return `${before}${literal}${after}`;
 };
 
-for (const slug of fs.readdirSync(effectsDir)) {
-    const effectFolder = path.join(effectsDir, slug);
-    if (!fs.statSync(effectFolder).isDirectory()) continue;
+export function syncEmbeddedSources({ check = false, libraryRoot = ROOT } = {}) {
+    const effDir = path.join(libraryRoot, 'effects');
+    const regPath = path.join(libraryRoot, 'effect-registry.json');
+    if (!fs.existsSync(regPath)) {
+        throw new Error(`effect-registry.json not found at ${regPath}`);
+    }
+    const registry = JSON.parse(fs.readFileSync(regPath, 'utf8'));
 
-    const implPath = path.join(effectFolder, 'implementation.js');
-    if (!fs.existsSync(implPath)) continue;
+    const diffs = [];
+    const synced = [];
 
-    let impl = fs.readFileSync(implPath, 'utf8');
+    for (const [slug, entry] of Object.entries(registry.effects || {})) {
+        const effectFolder = path.join(effDir, slug);
+        if (!fs.existsSync(effectFolder)) {
+            throw new Error(`Effect directory missing for registered effect "${slug}" at ${effectFolder}`);
+        }
 
-    // Check for SKSL file
-    const skslCandidate1 = path.join(effectFolder, `${slug}.sksl`);
-    if (fs.existsSync(skslCandidate1) && impl.includes('/* @@BEGIN_SKSL@@ */')) {
-        const skslSource = fs.readFileSync(skslCandidate1, 'utf8');
-        impl = replaceBlock(impl, '/* @@BEGIN_SKSL@@ */', '/* @@END_SKSL@@ */', 'SKSL_SOURCE', skslSource, implPath);
+        const implPath = path.join(effectFolder, 'implementation.js');
+        if (!fs.existsSync(implPath)) {
+            throw new Error(`implementation.js missing for effect "${slug}" at ${implPath}`);
+        }
+
+        const originalImpl = fs.readFileSync(implPath, 'utf8').replace(/\r\n/g, '\n');
+        let updatedImpl = originalImpl;
+
+        // Check for SKSL file
+        const skslCandidate = path.join(effectFolder, `${slug}.sksl`);
+        if (fs.existsSync(skslCandidate) && originalImpl.includes('/* @@BEGIN_SKSL@@ */')) {
+            const skslSource = fs.readFileSync(skslCandidate, 'utf8').replace(/\r\n/g, '\n');
+            updatedImpl = replaceBlock(updatedImpl, '/* @@BEGIN_SKSL@@ */', '/* @@END_SKSL@@ */', 'SKSL_SOURCE', skslSource, implPath);
+        }
+
+        // Check for Deformer file
+        const deformerCandidate = path.join(effectFolder, `${slug}.deformer.js`);
+        if (fs.existsSync(deformerCandidate) && originalImpl.includes('/* @@BEGIN_DEFORMER@@ */')) {
+            const deformerSource = fs.readFileSync(deformerCandidate, 'utf8').replace(/\r\n/g, '\n');
+            updatedImpl = replaceBlock(updatedImpl, '/* @@BEGIN_DEFORMER@@ */', '/* @@END_DEFORMER@@ */', 'DEFORMER_SOURCE', deformerSource, implPath);
+        }
+
+        if (originalImpl !== updatedImpl) {
+            diffs.push({ slug, file: implPath });
+            if (!check) {
+                fs.writeFileSync(implPath, updatedImpl, 'utf8');
+                synced.push(slug);
+            }
+        } else {
+            synced.push(slug);
+        }
     }
 
-    // Check for Deformer file
-    const deformerCandidate1 = path.join(effectFolder, `${slug}.deformer.js`);
-    if (fs.existsSync(deformerCandidate1) && impl.includes('/* @@BEGIN_DEFORMER@@ */')) {
-        const deformerSource = fs.readFileSync(deformerCandidate1, 'utf8');
-        impl = replaceBlock(impl, '/* @@BEGIN_DEFORMER@@ */', '/* @@END_DEFORMER@@ */', 'DEFORMER_SOURCE', deformerSource, implPath);
-    }
+    return {
+        ok: diffs.length === 0,
+        syncedCount: synced.length,
+        diffs,
+    };
+}
 
-    fs.writeFileSync(implPath, impl, 'utf8');
-    console.log(`Synced embedded sources into effects/${slug}/implementation.js`);
+const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) {
+    const check = process.argv.includes('--check');
+    const res = syncEmbeddedSources({ check });
+    console.log(JSON.stringify(res, null, 2));
+    if (check && !res.ok) process.exit(1);
 }

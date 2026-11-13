@@ -5,6 +5,8 @@
  * Creates a native Cavalry `null` layer, automatically calculates the visual
  * centroid of selected layers, parents them to the Null, and sets the signature
  * After Effects Null color (#F05050).
+ *
+ * Supports empty selection (creates Null at origin {x:0, y:0}) and verified parenting.
  */
 (function () {
     var TAG_NULL = '[AE:Null]';
@@ -37,7 +39,32 @@
     var nullName = TAG_NULL + ' Null ' + count;
 
     // Create native Cavalry null layer
-    var nullId = api.create('null', nullName);
+    var nullId = safeCall(function () { return api.create('null', nullName); }, null);
+    if (!nullId) {
+        var createFail = {
+            ok: false,
+            partial: false,
+            effect: 'Null Object',
+            workflow: 'Null Object',
+            code: 'NODE_CREATION_FAILED',
+            error: 'Failed to create native Cavalry null layer',
+            appliedCount: 0,
+            failedCount: selection.length || 1,
+            warnings: [],
+            results: [],
+            nullId: null,
+            name: nullName,
+            parentedCount: 0,
+            parentedChildren: [],
+            failedChildren: [],
+            position: { x: 0, y: 0 }
+        };
+        try { __result = createFail; } catch (e) {}
+        if (typeof console !== 'undefined' && console.error) {
+            console.error('AE Effects [Null Object]: ' + createFail.error);
+        }
+        return createFail;
+    }
 
     // After Effects signature coral red Null color
     var aeNullColor = { r: 240, g: 80, b: 80, a: 255 };
@@ -47,6 +74,9 @@
     };
 
     var parentedChildren = [];
+    var failedChildren = [];
+    var results = [];
+
     if (selection.length > 0) {
         var sumX = 0;
         var sumY = 0;
@@ -78,31 +108,54 @@
             nullProps.position = { x: 0, y: 0 };
         }
 
-        api.set(nullId, nullProps);
+        safeCall(function () { api.set(nullId, nullProps); }, null);
 
-        // Parent selected layers to the Null
+        // Parent selected layers to the Null and verify
         for (var p = 0; p < selection.length; p++) {
             var targetChild = selection[p];
             if (targetChild !== nullId) {
-                var ok = safeCall(function () { return api.parent(targetChild, nullId); }, false);
-                parentedChildren.push(targetChild);
+                var parentRes = safeCall(function () { return api.parent(targetChild, nullId); }, false);
+                var actualParent = safeCall(function () {
+                    return typeof api.getParent === 'function' ? api.getParent(targetChild) : nullId;
+                }, nullId);
+
+                var success = (actualParent === nullId) || (parentRes === true);
+                if (success) {
+                    parentedChildren.push(targetChild);
+                    results.push({ targetId: targetChild, ok: true, parent: nullId });
+                } else {
+                    failedChildren.push(targetChild);
+                    results.push({ targetId: targetChild, ok: false, error: 'Parenting operation failed' });
+                }
             }
         }
     } else {
         nullProps.position = { x: 0, y: 0 };
-        api.set(nullId, nullProps);
+        safeCall(function () { api.set(nullId, nullProps); }, null);
     }
 
     // Select the new Null
     safeCall(function () { api.select([nullId]); }, null);
 
+    var hasFailures = failedChildren.length > 0;
+    var isPartial = hasFailures && parentedChildren.length > 0;
+
     var summary = {
-        ok: true,
+        ok: !hasFailures,
+        partial: isPartial,
+        effect: 'Null Object',
         workflow: 'Null Object',
+        code: hasFailures ? (isPartial ? 'PARTIAL_SUCCESS' : 'PARENTING_FAILED') : 'SUCCESS',
+        error: hasFailures ? ('Parenting failed for ' + failedChildren.length + ' layer(s)') : null,
+        appliedCount: parentedChildren.length,
+        failedCount: failedChildren.length,
+        warnings: [],
+        results: results,
         nullId: nullId,
         name: nullName,
         parentedCount: parentedChildren.length,
         parentedChildren: parentedChildren,
+        failedChildren: failedChildren,
         position: nullProps.position
     };
 

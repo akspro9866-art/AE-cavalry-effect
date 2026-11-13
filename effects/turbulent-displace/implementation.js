@@ -589,10 +589,18 @@
         if (!selection.length) {
             out = {
                 ok: false,
-                effect: 'turbulent-displace',
+                partial: false,
+                effect: 'Turbulent Displace',
+                slug: 'turbulent-displace',
+                code: 'NO_SELECTION',
                 version: '1.1.0',
                 error: 'No layer selected in Cavalry. Select one or more drawable layers (or pass createTestTargetIfEmpty: true) before applying AE Turbulent Displace.',
-                selection: []
+                appliedCount: 0,
+                failedCount: 1,
+                selection: [],
+                applied: [],
+                results: [],
+                warnings: []
             };
             try { __result = out; } catch (e) {}
             return out;
@@ -626,31 +634,44 @@
 
         safeCall(function () { api.select(selection); }, null);
 
+        var failedCount = selection.length - applied.length;
         if (!applied.length) {
             out = {
                 ok: false,
-                effect: 'turbulent-displace',
+                partial: false,
+                effect: 'Turbulent Displace',
+                slug: 'turbulent-displace',
+                code: 'APPLICATION_FAILED',
                 version: '1.1.0',
                 mode: mode,
                 error: warnings.length ? warnings.join(' ') : 'No selected layer supported AE Turbulent Displace.',
                 appliedCount: 0,
+                failedCount: selection.length || 1,
                 applied: [],
+                results: [],
                 warnings: warnings
             };
             try { __result = out; } catch (e) {}
             return out;
         }
 
+        var isPartial = failedCount > 0;
         out = {
             ok: true,
-            effect: 'turbulent-displace',
+            partial: isPartial,
+            effect: 'Turbulent Displace',
+            slug: 'turbulent-displace',
+            code: isPartial ? 'PARTIAL_SUCCESS' : 'SUCCESS',
+            error: null,
             version: '1.1.0',
             mode: mode,
             params: params,
             paddingPx: padPx,
             createdFallbackTarget: createdFallbackTarget,
             appliedCount: applied.length,
+            failedCount: Math.max(0, failedCount),
             applied: applied,
+            results: applied,
             warnings: warnings
         };
         try { __result = out; } catch (e) {}

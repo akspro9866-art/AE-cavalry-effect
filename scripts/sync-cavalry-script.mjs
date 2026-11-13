@@ -3,34 +3,20 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import {
+    resolveProjectRoot,
+    resolveCavalryScriptsDir,
+    toForwardSlashes,
+} from './lib/config.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = resolveProjectRoot();
 const PANEL_TEMPLATE_PATH = path.join(ROOT, 'templates', 'cavalry-panel', 'ae-effects-panel.js');
 const EXCLUDED_STATUSES = new Set(['draft', 'failed', 'disabled', 'deprecated', 'broken']);
 
-export function resolveCavalryScriptsDir({
-    platform = process.platform,
-    appData = process.env.APPDATA,
-    home = os.homedir(),
-    override = process.env.CAVALRY_SCRIPTS_DIR || process.env.STALLION_DEPLOY_DIR,
-} = {}) {
-    if (override) return path.resolve(override);
-    if (platform === 'win32') {
-        const roaming = appData || path.join(home, 'AppData', 'Roaming');
-        return path.join(roaming, 'Cavalry', 'Scripts');
-    }
-    if (platform === 'darwin') {
-        return path.join(home, 'Library', 'Application Support', 'Cavalry', 'Scripts');
-    }
-    return path.join(home, '.local', 'share', 'Cavalry', 'Scripts');
-}
+export { resolveCavalryScriptsDir };
 
 function sha256(bufOrStr) {
     return createHash('sha256').update(bufOrStr).digest('hex');
-}
-
-function toForwardSlashes(p) {
-    return String(p || '').replace(/\\/g, '/');
 }
 
 function getTruncatedMtimeMs(filePath) {
@@ -103,6 +89,8 @@ export function collectEffectsForScript(libraryRoot = ROOT, options = {}) {
             status: entry.status || 'verified',
             primaryStrategy: entry.primaryStrategy || 'script',
             modes: inferSupportedModes(entry),
+            metadata: entry.metadata || {},
+            aliases: entry.aliases || [],
             entryScript: toForwardSlashes(entryRel),
             mtime,
             description,
@@ -134,6 +122,8 @@ export function buildCavalryScriptSource({
         status: e.status,
         primaryStrategy: e.primaryStrategy,
         modes: e.modes,
+        metadata: e.metadata || {},
+        aliases: e.aliases || [],
         entryScript: e.entryScript,
         description: e.description,
     }));

@@ -250,8 +250,17 @@
         var targetName = safeCall(function () { return api.getNiceName ? api.getNiceName(layerId) : (api.getName ? api.getName(layerId) : layerId); }, layerId);
 
         if (!filterId) {
-            filterId = api.create('skslFilter', TAG_SKSL + ' ' + targetName);
+            filterId = safeCall(function () { return api.create('skslFilter', TAG_SKSL + ' ' + targetName); }, null);
             isNew = true;
+        }
+
+        if (!filterId) {
+            return {
+                targetId: layerId,
+                targetName: targetName,
+                ok: false,
+                error: 'Failed to create skslFilter node'
+            };
         }
 
         var pad = calculatePadding(params);
@@ -277,13 +286,14 @@
         }
 
         if (!isAttached && layerId !== filterId) {
-            safeCall(function () { api.connect(filterId, 'message', layerId, 'filters'); }, null);
+            safeCall(function () { api.connect(filterId, 'id', layerId, 'filters'); }, null);
         }
 
         return {
             targetId: layerId,
             targetName: targetName,
             filterId: filterId,
+            ok: true,
             isNew: isNew,
             boundSlots: boundSlots,
             padding: pad
@@ -315,11 +325,23 @@
         }
     }
 
+    var failedCount = 0;
+    for (var rIdx = 0; rIdx < applied.length; rIdx++) {
+        if (applied[rIdx] && applied[rIdx].ok === false) failedCount++;
+    }
+    var isOk = applied.length > 0 && failedCount === 0;
+    var isPartial = failedCount > 0 && failedCount < applied.length;
+
     var report = {
-        ok: true,
+        ok: isOk,
+        partial: isPartial,
         effect: 'CC Ball Action',
         slug: 'cc-ball-action',
-        appliedCount: applied.length,
+        code: isOk ? 'SUCCESS' : (isPartial ? 'PARTIAL_SUCCESS' : 'RUNTIME_EXCEPTION'),
+        error: isOk ? null : (failedCount + ' layer(s) failed'),
+        appliedCount: applied.length - failedCount,
+        failedCount: failedCount,
+        warnings: [],
         targets: (function() { var t = []; for (var i = 0; i < applied.length; i++) t.push(applied[i].targetId); return t; })(),
         results: applied,
         params: params

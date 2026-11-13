@@ -1,97 +1,105 @@
 # AE Effects for Cavalry (`ae-effects-cavalry`)
 
-[![Tests](https://img.shields.io/badge/tests-31%2F31%20passing-brightgreen.svg)](test/)
+[![Tests](https://img.shields.io/badge/tests-42%2F42%20passing-brightgreen.svg)](test/)
 [![Cavalry](https://img.shields.io/badge/Cavalry-2.8%2B-blue.svg)](https://cavalry.scenery.io/)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![GPU](https://img.shields.io/badge/GPU-SkSL%20Accelerated-orange.svg)](effects/)
-[![AI Agents](https://img.shields.io/badge/AI%20Agents-Qoder%20%7C%20ZCode%20%7C%20OpenCode%20%7C%20Antigravity%20%7C%20Cursor-teal.svg)](skills/)
+[![Verification](https://img.shields.io/badge/verification-5--Tier%20Pyramid-teal.svg)](TESTING.md)
 
-> **100% faithful mathematical reconstructions of Adobe After Effects effects and workflow primitives for Cavalry 2.8+**, featuring a zero-dependency **1-Click GUI Panel** for Cavalry artists and native autonomous skill/agent configurations for **Qoder**, **ZCode**, **OpenCode**, **Antigravity**, and **Cursor**.
+> A production-quality library reconstructing Adobe After Effects effects and core composition workflows for **Cavalry 2.8+**, featuring GPU-accelerated SkSL shaders, procedural deformers, a zero-dependency **1-Click GUI Panel** for motion designers, and native AI-agent configurations for **Qoder**, **ZCode**, **OpenCode**, **Antigravity**, and **Cursor**.
 
 ---
 
-## ⚡ Quickstart for Cavalry Users (Zero Dependencies)
+## ⚡ Quickstart for Motion Designers (Zero Dependencies)
 
-You don't need Node.js, Python, or terminal tools to use these effects in Cavalry!
+You do **not** need Node.js, Python, or terminal tools to use these effects in Cavalry.
 
 1. Download [`cavalry-script/AE Effects.js`](cavalry-script/AE%20Effects.js).
-2. Drop it into your Cavalry Scripts folder:
+2. Place it into your Cavalry Scripts directory:
    - **Windows**: `%APPDATA%\Cavalry\Scripts\` (e.g. `C:\Users\<username>\AppData\Roaming\Cavalry\Scripts\`)
    - **macOS**: `~/Library/Application Support/Cavalry/Scripts/`
-3. In Cavalry, go to **`Scripts -> AE Effects`**.
-4. Select any layer (shape, text, group, image, or pre-comp) and click any effect button to apply it instantly!
+3. Launch Cavalry and open **`Scripts -> AE Effects`**.
+4. Select any layer (shape, text, group, image, or pre-comp) and click any effect button to apply it instantly.
 
 ---
 
-## 🎬 Included Effects & Composition Workflows
+## 🎬 Effect & Workflow Catalog
 
-All effects are mathematically reconstructed and verified against native After Effects behavior, exposing editable dynamic attributes and supporting full keyframe animation.
+All effects are mathematically reconstructed and verified against native After Effects behavior, exposing editable dynamic attributes and supporting full keyframe animation in Cavalry's Attribute Editor.
 
-| Effect / Tool | Category | Type | AE MatchName | Key Controls & Behavior |
-|---|---|---|---|---|
-| **Gaussian Blur** | Blur & Sharpen | `skslFilter` | `ADBE Gaussian Blur 2` | • 36-tap Vogel Golden-Spiral isotropic Gaussian kernel ($r_i = 3\sigma \sqrt{(i+0.5)/36}$)<br>• Blur Dimensions (Both, H Only, V Only)<br>• Repeat Edge Pixels clamping without edge darkening |
-| **Fractal Noise** | Noise & Grain | `skslFilter` | `ADBE Fractal Noise` | • 5 Fractal Modes (Basic, Turbulent Smooth, Turbulent Basic, Turbulent Sharp, Dynamic)<br>• Contrast & Brightness remapping<br>• Overflow (Clip, Soft Clamp S-curve, Wrap)<br>• Seamless 4D torus loop evolution ($E(\theta) = (R_1\cos\theta, R_1\sin\theta, R_2\cos\phi, R_2\sin\phi)$)<br>• Invert polarity |
-| **Tint** | Color Correction | `skslFilter` | `ADBE Tint` | • Rec. 601 perceptual luminance ($0.299R + 0.587G + 0.114B$)<br>• Map Black To / Map White To color grading<br>• Straight alpha unmultiplication preventing dark edge fringe artifacts |
-| **CC Ball Action** | Simulation | `skslFilter` | `CC Ball Action` | • Grid binning with 3x3 neighbor kernel<br>• 3D Spherical normal vector projection<br>• Ambient + diffuse + Phong specular key-lighting<br>• 3D Axis Rotation (X, Y, Z) with $z$-depth sorting<br>• 3D Spatial scatter vector dispersion |
-| **CC RepeTile** | Distort | `skslFilter` | `ADBE CC RepeTile` | • 6 Tiling algorithms (Repeat, Flip ping-pong, Checker, Brick 50% offset, Fold, Unfold)<br>• Asymmetric directional expansion (L/R/U/D)<br>• Strict 4-sided directional boundary clipping |
-| **Turbulent Displace** | Distort | `skslFilter` | `ADBE Turbulent Displace` | • 9 Displacement algorithms (Turbulent, Bulge, Twist, Smoother variants, H/V/Cross)<br>• Branchless 4D Simplex noise field<br>• Smooth edge pinning (All, H, V, L, R, T, B)<br>• Cycle Evolution periodic looping |
-| **Deep Glow** | Stylize | `skslFilter` | `ADBE Deep Glow` | • Physical inverse-square falloff ($1 / (1 + (d/R)^2)$)<br>• Chromatic dispersion & aberration<br>• Anamorphic flare aspect ratio & angle<br>• ACES Filmic & Reinhard tone mapping |
-| **Null Object** | Composition | `null` | `ADBE Null Object` | • Non-rendering spatial transform controller<br>• Computes collective centroid bounding box of selection<br>• Automatically parents selected layers to the Null |
-| **Adjustment Layer** | Composition | `group` | `ADBE Adjustment Layer` | • Creates a composite filter group<br>• Applies effect pipelines to all enclosed underlying layers |
-| **Pre-Compose** | Composition | `compositionReference` | `ADBE Pre-Compose` | • Nests selected layers into a new isolated composition<br>• Replaces selection with active compositionReference binding |
-
----
-
-## 🤖 Autonomous AI Agent Integration (Qoder, ZCode, OpenCode, Antigravity, Cursor)
-
-This repository includes first-class configurations for autonomous coding agents so they can automatically research, reconstruct, and apply effects to live Cavalry instances:
-
-### 1. Qoder
-- **Skills**: [`.qoder/skills/`](.qoder/skills/)
-- **Rules**: [`.qoder/rules/AGENTS.md`](.qoder/rules/AGENTS.md)
-- **Agent Roles**: [`.qoder/agents/`](.qoder/agents/)
-
-### 2. ZCode & OpenCode
-- **Skills**: [`skills/`](skills/)
-- **Instructions**: [`.opencode/instructions.md`](.opencode/instructions.md)
-- **Agents**: [`agents/`](agents/)
-
-### 3. Google Antigravity & Gemini CLI
-- **Subagents**: [`.agents/agents/`](.agents/agents/)
-- **Skills**: [`.agents/skills/`](.agents/skills/)
-
-### 4. Cursor
-- **MDC Rules**: [`.cursor/rules/ae-effects.mdc`](.cursor/rules/ae-effects.mdc)
-- **Rules File**: [`.cursorrules`](.cursorrules)
+| Effect / Tool | Category | Type | AE MatchName | Architectural & Mathematical Highlights |
+| :--- | :--- | :--- | :--- | :--- |
+| **Gaussian Blur** | Blur & Sharpen | `skslFilter` | `ADBE Gaussian Blur 2` | • 37-tap Vogel golden-spiral isotropic Gaussian kernel ($N=37$, $r_i = 3\sigma \sqrt{(i+0.5)/37}$)<br>• Directional 1D separable modes (Both, Horizontal Only, Vertical Only with $N=65$ taps)<br>• Repeat edge pixels clamping preventing perimeter darkening |
+| **Fractal Noise** | Noise & Grain | `skslFilter` | `ADBE Fractal Noise` | • 4D Simplex Fractional Brownian Motion (fBm) with dynamic octaves<br>• 5 Fractal Modes (Basic, Turbulent Smooth, Turbulent Basic, Turbulent Sharp, Dynamic)<br>• Contrast, Brightness & Invert remapping<br>• Overflow response: Clip, Soft Clamp S-curve, Wrap<br>• Seamless 4D torus loop evolution |
+| **Tint** | Color Correction | `skslFilter` | `ADBE Tint` | • ITU-R Rec. 601 perceptual luminance weighting ($0.299R + 0.587G + 0.114B$)<br>• Straight alpha unmultiplication preventing perimeter fringe artifacts<br>• Map Black To / Map White To two-tone grading with Amount blend |
+| **CC Ball Action** | Simulation | `skslFilter` | `CC Ball Action` | • Grid binning with 3x3 neighbor cell evaluation<br>• 3D Spherical normal vector projection with ambient, diffuse & Phong specular lighting<br>• 3D Axis rotation (X, Y, Z) and spatial scatter dispersion |
+| **CC RepeTile** | Distort | `skslFilter` | `ADBE CC RepeTile` | • 6 Tiling algorithms: Repeat, Flip ping-pong, Checker, Brick 50% offset, Fold, Unfold<br>• Asymmetric directional expansion (Left, Right, Up, Down)<br>• Dynamic canvas padding expansion |
+| **Turbulent Displace** | Distort | `skslFilter` / Deformer | `ADBE Turbulent Displace` | • 9 Displacement algorithms (Turbulent, Bulge, Twist, Smoother variants, Cross)<br>• Branchless 4D Simplex vector displacement noise field<br>• Boundary edge pinning (All, H, V, L, R, T, B) and Cycle Evolution periodic looping |
+| **Deep Glow** | Stylize | `skslFilter` | `ADBE Deep Glow` | • Physical inverse-square optical falloff ($w(r) = 1 / (1 + (r/r_0)^2)$)<br>• Threshold knee pre-filtering and chromatic aberration dispersion<br>• Anamorphic flare aspect ratio and angle control<br>• ACES filmic & Reinhard tone mapping |
+| **Null Object** | Composition | `null` | `ADBE Null Object` | • Procedural centroid bounding-box calculation from multi-layer selection<br>• Automatic parenting of selected layers with hierarchy verification<br>• After Effects coral red (`#F05050`) wireframe styling<br>• Empty selection instantiates Null at composition origin `(0, 0)` |
+| **Adjustment Layer** | Composition | `group` | `ADBE Adjustment Layer` | • Native composite group encapsulating selected layers<br>• Attached SkSL adjustment filter pipeline processing all children simultaneously<br>• Empty selection wraps all root composition layers |
+| **Pre-Compose** | Composition | `compositionReference` | `ADBE Pre-Compose` | • Encapsulates selected layers into a nested composition asset<br>• Replaces selection in active graph with a `compositionReference` node |
 
 ---
 
-## 🧪 4-Tier Verification Architecture
+## 🧪 5-Tier Verification Architecture
 
-Every effect in this library is governed by a strict four-tier verification protocol:
+Every effect in this library is governed by a strict five-tier verification protocol:
 
 ```
-[Tier 1: Static Validation]
+[Tier 1: Static Validation (Schema, Syntax, Invariant Sync)]
        │
        ▼
-[Tier 2: Math Invariants (node --test)]
+[Tier 2: Mathematical Invariants (Analytical Proofs & Boundary Limits)]
        │
        ▼
-[Tier 3: Headless Mock Stallion Execution]
+[Tier 3: Headless Mock Stallion Execution (VM Sandbox, Dynamic Slots, Fault Injection)]
        │
        ▼
-[Tier 4: Live Cavalry 2.8 Runtime & Frame Audit (127.0.0.1:8080)]
+[Tier 4: Live Cavalry 2.8 Runtime & GPU Frame Audit (http://127.0.0.1:8080)]
+       │
+       ▼
+[Tier 5: Visual Parity & Statistical Diff Analysis (MAE, MSE, PSNR, SSIM, Sobel)]
 ```
 
 ### Running Tests Locally
 
-```powershell
-# Run the complete test suite (31 tests across all effects):
+```bash
+# Run the complete test suite (42 unit tests, zero external dependencies):
 npm test
 
-# Run the live Cavalry runtime and GPU frame render audit:
+# Verify all synchronizers and embedded codes are in sync:
+npm run check
+
+# Run live Cavalry runtime and GPU frame verification (requires running Cavalry 2.8):
 npm run test:live
 ```
+
+---
+
+## 📚 Technical Documentation
+
+Comprehensive engineering documentation is available:
+
+- [**Architecture Specification**](ARCHITECTURE.md): System design, graph integration, and error contracts.
+- [**Development Guide**](DEVELOPMENT.md): Local environment setup, portable configuration, and adding effects.
+- [**Testing & Verification**](TESTING.md): Detailed breakdown of the 5-tier verification suite and visual diff engine.
+- [**Compatibility Matrix**](COMPATIBILITY.md): Supported Cavalry versions, OS platforms, and GPU backends.
+- [**Intellectual Property & Provenance**](PROVENANCE.md): Cleanroom engineering methodology and trademark disclosures.
+- [**Contributing Guidelines**](CONTRIBUTING.md): Standards, code style, and submission requirements.
+
+---
+
+## 🤖 Autonomous AI Agent Integration
+
+This repository includes canonical configurations and synchronization tools for autonomous coding agents:
+
+- **Google Antigravity & Gemini CLI**: [`.agents/agents/`](.agents/agents/) and [`.agents/skills/`](.agents/skills/)
+- **Qoder**: [`.qoder/`](.qoder/)
+- **ZCode & OpenCode**: [`skills/`](skills/) and [`.opencode/`](.opencode/)
+- **Cursor**: [`.cursor/rules/`](.cursor/rules/) and [`.cursorrules`](.cursorrules)
+
+All configurations are automatically validated and synchronized using `npm run sync:agents`.
 
 ---
 
@@ -102,36 +110,43 @@ ae-effects-cavalry/
 ├── cavalry-script/
 │   └── AE Effects.js                  # Standalone 1-click UI palette for Cavalry
 ├── effects/
-│   ├── gaussian-blur/                 # SkSL, math model, parameter map, tests
-│   ├── fractal-noise/                 # SkSL, math model, parameter map, tests
-│   ├── tint/                          # SkSL, math model, parameter map, tests
-│   ├── cc-ball-action/                # SkSL, math model, parameter map, tests
-│   ├── cc-repetile/                   # SkSL, math model, parameter map, tests
-│   ├── turbulent-displace/            # SkSL, deformer, math model, tests
-│   ├── deep-glow/                     # SkSL, math model, parameter map, tests
-│   ├── null-object/                   # Centroid math, parenting, tests
-│   ├── adjustment-layer/              # Group pipeline filter wiring, tests
-│   └── pre-compose/                   # Pre-compose API wiring, tests
-├── skills/                            # Agent skills (OpenCode, ZCode, Qoder)
-├── agents/                            # Agent definitions
-├── .agents/                           # Antigravity agent & skill mirrors
-├── .qoder/                            # Qoder agent & skill mirrors
-├── .cursor/                           # Cursor IDE MDC rules
-├── .opencode/                         # OpenCode instructions
-├── frames/                            # Verified live GPU rendered frame captures
+│   ├── adjustment-layer/              # Group pipeline filter wiring, notes, tests
+│   ├── cc-ball-action/                # SkSL shader, math model, technical notes, tests
+│   ├── cc-repetile/                   # SkSL shader, math model, technical notes, tests
+│   ├── deep-glow/                     # SkSL shader, math model, technical notes, tests
+│   ├── fractal-noise/                 # SkSL shader, math model, technical notes, tests
+│   ├── gaussian-blur/                 # SkSL shader, math model, technical notes, tests
+│   ├── null-object/                   # Centroid math, parenting, technical notes, tests
+│   ├── pre-compose/                   # Pre-compose API wiring, technical notes, tests
+│   ├── tint/                          # SkSL shader, math model, technical notes, tests
+│   └── turbulent-displace/            # SkSL shader, deformer, math model, notes, tests
 ├── scripts/
-│   ├── sync-cavalry-script.mjs        # Compiles & bundles AE Effects.js
-│   ├── sync-embedded.mjs              # Embeds standalone shaders into applicators
-│   └── live-verify-all-effects.mjs    # Audits live Cavalry 2.8 at 127.0.0.1:8080
-├── test/                              # Comprehensive test suite (31 suites)
-├── effect-registry.json               # Effect registry, metadata & aliases
+│   ├── lib/
+│   │   ├── config.mjs                 # Portable platform-aware path resolver
+│   │   ├── effect-runtime.mjs         # Standardized error reporting contract
+│   │   └── visual-diff.mjs            # Pure Node.js PNG decoder and visual diff engine
+│   ├── apply-effect.mjs               # Portable CLI applicator
+│   ├── live-verify-all-effects.mjs    # Audits live Cavalry 2.8 at 127.0.0.1:8080
+│   ├── sync-agent-configs.mjs         # Synchronizes AI-agent rules & skills
+│   ├── sync-cavalry-script.mjs        # Compiles standalone AE Effects.js
+│   └── sync-embedded.mjs              # Synchronizes embedded shaders
+├── test/                              # 42 unit tests across 12 test suites
+├── effect-registry.json               # Centralized effect metadata registry (v1.1.0)
+├── ARCHITECTURE.md                    # System architecture specification
+├── DEVELOPMENT.md                     # Development workflows and environment
+├── TESTING.md                         # 5-tier testing suite documentation
+├── COMPATIBILITY.md                   # Platform and version compatibility matrix
+├── PROVENANCE.md                      # Cleanroom IP and provenance review
+├── CONTRIBUTING.md                     # Contribution guidelines
 ├── package.json
-├── LICENSE                            # MIT License
 └── README.md
 ```
 
 ---
 
-## 📄 License
+## 📄 License & Disclaimers
 
-MIT License. Copyright (c) 2026 akspro9866-art. Free for commercial, personal, and educational motion design workflows in Cavalry.
+- Distributed under the [MIT License](LICENSE). Copyright (c) 2026 akspro9866-art.
+- **Adobe® and Adobe After Effects®** are registered trademarks of Adobe Inc.
+- **Cavalry** is a trademark of Scenery Ltd.
+- Reference to third-party software or effect names is purely nominative for interoperability description. No endorsement or affiliation is implied.

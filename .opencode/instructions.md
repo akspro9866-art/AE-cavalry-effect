@@ -1,16 +1,12 @@
-# OpenCode / ZCode Instructions: AE Effects for Cavalry
+# After Effects → Cavalry Effect Conversion Rules
 
-This repository provides 100% faithful Adobe After Effects effect reconstructions for Cavalry 2.8+ as high-performance GPU SkSL Filters, JavaScript Deformers, and procedural composition workflows.
+When asked to create, replicate, convert, port, apply, or test an Adobe After Effects effect in Cavalry:
 
-## Key Directories
-- `cavalry-script/AE Effects.js`: Standalone, bundled one-click GUI panel for Cavalry. Copy directly to `%APPDATA%\Cavalry\Scripts\` (Windows) or `~/Library/Application Support/Cavalry/Scripts/` (macOS).
-- `effects/<slug>/`: Individual effect implementations containing SkSL shaders, parameter maps, math models, and tests.
-- `skills/`: Machine-readable skills for autonomous AI agents (Qoder, ZCode, OpenCode, Antigravity, Cursor).
-- `agents/`: Agent role definitions.
-- `effect-registry.json`: Index of all verified effects, status, node types, and aliases.
-- `test/`: 4-tier verification suite (static, math invariants, headless mock, live Cavalry 2.8 runtime & frame render).
-
-## Operating Rules
-1. Never fabricate Cavalry API names or attributes.
-2. Maintain 100% parity with Adobe After Effects parameters, default values, and mathematical behavior.
-3. Keep `cavalry-script/AE Effects.js` synchronized by running `node scripts/sync-cavalry-script.mjs`.
+1. Immediately load and follow the `ae-to-cavalry-effect-engineer` skill without asking the user to repeat conversion instructions.
+2. Check `effect-registry.json` first:
+   - If the effect already exists and passes verification, inspect `effects/<slug>/` and apply or extend the existing implementation rather than regenerating from scratch.
+   - Never overwrite an existing verified effect version with an untested replacement.
+3. Reuse existing infrastructure (`cavalry-mcp` and `stallion`). Do not build a separate HTTP bridge or rewrite existing helpers.
+4. Distinguish documented Adobe After Effects behavior from independent mathematical reconstruction. Never fabricate Cavalry APIs or attribute names.
+5. Apply effects to the user's existing selected Cavalry layer(s) (`api.getSelection()`), preserve original artwork and selection, and never report live Cavalry runtime or visual frame verification as passing unless live Cavalry (`127.0.0.1:8080`) actually ran and passed.
+6. After creating or verifying any effect cleanly, automatically update `effect-registry.json` and run `node scripts/sync-cavalry-script.mjs` so the new effect is immediately available for one-click application inside Cavalry (`Scripts -> AE Effects`).

@@ -2,7 +2,7 @@
   "name": "ae-effects-cavalry",
   "version": "1.0.0",
   "type": "module",
-  "description": "100% faithful Adobe After Effects effects & workflow reconstructions for Cavalry 2.8+ with one-click GUI application and autonomous AI agent skills (Qoder, ZCode, OpenCode, Cursor, Antigravity).",
+  "description": "Production-quality Adobe After Effects effect and workflow reconstructions for Cavalry 2.8+ with one-click GUI application and autonomous AI agent skills (Qoder, ZCode, OpenCode, Cursor, Antigravity).",
   "main": "cavalry-script/AE Effects.js",
   "repository": {
     "type": "git",
@@ -28,8 +28,10 @@
     "test": "node --test test/**/*.test.mjs",
     "test:live": "node scripts/live-verify-all-effects.mjs",
     "sync:embedded": "node scripts/sync-embedded.mjs",
+    "sync:agents": "node scripts/sync-agent-configs.mjs",
     "sync:script": "node scripts/sync-cavalry-script.mjs",
-    "sync": "node scripts/sync-embedded.mjs && node scripts/sync-cavalry-script.mjs",
+    "sync": "node scripts/sync-embedded.mjs && node scripts/sync-agent-configs.mjs && node scripts/sync-cavalry-script.mjs",
+    "check": "node scripts/sync-embedded.mjs --check && node scripts/sync-agent-configs.mjs --check && node scripts/sync-cavalry-script.mjs --check",
     "build": "npm run sync && npm test"
   }
 }

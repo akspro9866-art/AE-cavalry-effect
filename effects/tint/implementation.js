@@ -245,8 +245,16 @@
         var targetName = safeCall(function () { return api.getNiceName ? api.getNiceName(layerId) : (api.getName ? api.getName(layerId) : layerId); }, layerId);
 
         if (!filterId) {
-            filterId = api.create('skslFilter', TAG_SKSL + ' ' + targetName);
+            filterId = safeCall(function () { return api.create('skslFilter', TAG_SKSL + ' ' + targetName); }, null);
             isNew = true;
+        }
+
+        if (!filterId) {
+            return {
+                targetId: layerId,
+                ok: false,
+                error: 'Failed to create skslFilter node'
+            };
         }
 
         var claimedSlots = {};
@@ -261,13 +269,15 @@
         }
 
         var filterProps = { code: liveCode, padding: { x: 0, y: 0 } };
-        api.set(filterId, filterProps);
+        safeCall(function () { api.set(filterId, filterProps); }, null);
 
         if (isNew) {
-            api.connect(filterId, 'id', layerId, 'filters');
+            safeCall(function () { api.connect(filterId, 'id', layerId, 'filters'); }, null);
         }
 
         return {
+            targetId: layerId,
+            ok: true,
             filterId: filterId,
             isNew: isNew,
             boundSlots: boundSlots
@@ -300,7 +310,18 @@
 
     if (!selection.length) {
         var msg = 'AE Effects [Tint]: No layer selected. Please select one or more layers in Cavalry.';
-        var out = { ok: false, error: msg, appliedCount: 0 };
+        var out = {
+            ok: false,
+            partial: false,
+            effect: 'Tint',
+            code: 'NO_SELECTION',
+            error: msg,
+            appliedCount: 0,
+            failedCount: 1,
+            warnings: [],
+            results: [],
+            targets: []
+        };
         try { __result = out; } catch (e) {}
         if (typeof console !== 'undefined' && console.warn) console.warn(msg);
         return out;
@@ -320,11 +341,23 @@
     // Preserve original selection
     safeCall(function () { api.select(selection); }, null);
 
+    var failedCount = 0;
+    for (var r = 0; r < results.length; r++) {
+        if (results[r] && results[r].ok === false) failedCount++;
+    }
+    var isOk = results.length > 0 && failedCount === 0;
+    var isPartial = failedCount > 0 && failedCount < results.length;
+
     var summary = {
-        ok: true,
+        ok: isOk,
+        partial: isPartial,
         effect: 'Tint',
+        code: isOk ? 'SUCCESS' : (isPartial ? 'PARTIAL_SUCCESS' : 'RUNTIME_EXCEPTION'),
+        error: isOk ? null : (failedCount + ' layer(s) failed'),
         strategy: 'skslFilter',
-        appliedCount: results.length,
+        appliedCount: results.length - failedCount,
+        failedCount: failedCount,
+        warnings: [],
         targets: appliedLayers,
         createdTarget: createdTarget,
         results: results,

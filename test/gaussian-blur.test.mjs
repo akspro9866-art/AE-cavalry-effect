@@ -28,8 +28,13 @@ test('Gaussian Blur — Tier 1: Static validation & embedded code sync', () => {
     assert.equal(pmap.parameters.length, 3);
 });
 
-test('Gaussian Blur — Tier 2: Mathematical invariants (Gaussian decay & padding)', () => {
-    // Monotonic Gaussian decay
+test('Gaussian Blur — Tier 2: Mathematical invariants (Gaussian decay, normalization & sample counts)', () => {
+    // 1. Exact sample counts
+    assert.equal(mathModel.SAMPLE_COUNTS.twoDimensional.totalSamples, 37);
+    assert.equal(mathModel.SAMPLE_COUNTS.horizontalOnly.totalSamples, 65);
+    assert.equal(mathModel.SAMPLE_COUNTS.verticalOnly.totalSamples, 65);
+
+    // 2. Monotonic Gaussian decay
     const b = 50.0;
     const w0 = mathModel.computeGaussianWeight(0.0, b);
     const w10 = mathModel.computeGaussianWeight(10.0, b);
@@ -41,7 +46,15 @@ test('Gaussian Blur — Tier 2: Mathematical invariants (Gaussian decay & paddin
     assert.ok(w25 < w10);
     assert.ok(w50 < w25);
 
-    // Padding directional isolation
+    // 3. Weight sum normalization
+    const sum2D = mathModel.computeKernelWeightsSum(50.0, 0);
+    const sumH = mathModel.computeKernelWeightsSum(50.0, 1);
+    const sumV = mathModel.computeKernelWeightsSum(50.0, 2);
+    assert.ok(sum2D > 1.0 && Number.isFinite(sum2D));
+    assert.ok(sumH > 1.0 && Number.isFinite(sumH));
+    assert.ok(sumV > 1.0 && Number.isFinite(sumV));
+
+    // 4. Padding directional isolation
     const padBoth = mathModel.computePadding(50.0, 0);
     assert.ok(padBoth.x > 0 && padBoth.y > 0);
 
@@ -50,6 +63,17 @@ test('Gaussian Blur — Tier 2: Mathematical invariants (Gaussian decay & paddin
 
     const padV = mathModel.computePadding(50.0, 2);
     assert.ok(padV.x === 0 && padV.y > 0, 'Vertical only must zero X padding');
+
+    // 5. Resolution benchmark simulations
+    const bench256 = mathModel.benchmarkGaussianKernel(256, 256, 50.0, 0);
+    const bench512 = mathModel.benchmarkGaussianKernel(512, 512, 50.0, 0);
+    const bench1080p = mathModel.benchmarkGaussianKernel(1920, 1080, 50.0, 0);
+    const bench4k = mathModel.benchmarkGaussianKernel(3840, 2160, 50.0, 0);
+
+    assert.equal(bench256.totalTapsPerPixel, 37);
+    assert.equal(bench512.totalTextureEvaluations, 512 * 512 * 37);
+    assert.equal(bench1080p.totalTextureEvaluations, 1920 * 1080 * 37);
+    assert.equal(bench4k.totalTextureEvaluations, 3840 * 2160 * 37);
 });
 
 test('Gaussian Blur — Tier 3: Headless Mock Stallion execution & dynamic slots', () => {
@@ -126,6 +150,7 @@ test('Gaussian Blur — Tier 3: Headless Mock Stallion execution & dynamic slots
     const res = vm.runInContext(implSource, sandbox);
 
     assert.equal(res.ok, true);
+    assert.equal(res.code, 'SUCCESS');
     assert.equal(res.effect, 'Gaussian Blur');
     assert.equal(res.appliedCount, 1);
     const filterId = res.results[0].filterId;
@@ -137,4 +162,22 @@ test('Gaussian Blur — Tier 3: Headless Mock Stallion execution & dynamic slots
     assert.equal(filterNode.attrs['inputs.2'], 1); // Repeat edge pixels
     assert.ok(filterNode.attrs.padding.x > 0);
     assert.equal(filterNode.attrs.padding.y, 0);
+
+    // Fault injection test: node creation failure
+    const faultScene = new MockScene();
+    faultScene.create = () => null; // Simulate failure to create skslFilter
+    const rFault = faultScene.primitive('rectangle', 'Fault Target');
+    faultScene.select([rFault]);
+
+    const faultSandbox = {
+        api: faultScene,
+        console: console,
+        __EFFECT_CONFIG__: { params: { blurriness: 20 } }
+    };
+    vm.createContext(faultSandbox);
+    const faultRes = vm.runInContext(implSource, faultSandbox);
+    assert.equal(faultRes.ok, false);
+    assert.equal(faultRes.code, 'RUNTIME_EXCEPTION');
+    assert.equal(faultRes.appliedCount, 0);
+    assert.equal(faultRes.failedCount, 1);
 });

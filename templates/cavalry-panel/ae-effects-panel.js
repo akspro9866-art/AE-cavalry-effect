@@ -84,7 +84,13 @@
         var parsed = safeCall(function () { return JSON.parse(rawJson); }, null);
         if (!parsed || !parsed.effects) return { reloaded: false, reason: 'invalid-registry' };
 
-        libraryRoot = String(parsed.libraryRoot || DEFAULT_LIBRARY_ROOT).replace(/\\/g, '/');
+        var parsedRoot = String(parsed.libraryRoot || '').replace(/\\/g, '/');
+        if (!parsedRoot || parsedRoot === '.') {
+            var slashIdx = registryPath.lastIndexOf('/');
+            libraryRoot = slashIdx >= 0 ? registryPath.substring(0, slashIdx) : '.';
+        } else {
+            libraryRoot = parsedRoot;
+        }
         lastRegistryMtime = currentMtime;
 
         var nextEffects = [];
@@ -123,6 +129,8 @@
                 status: entry.status || 'verified',
                 primaryStrategy: entry.primaryStrategy || 'script',
                 modes: inferModesFromRegistryEntry(entry),
+                metadata: entry.metadata || {},
+                aliases: entry.aliases || [],
                 entryScript: rel,
                 description: ''
             });
@@ -266,11 +274,13 @@
                 return { ok: false, error: 'Missing runner for ' + item.slug };
             }
 
+            var meta = item.metadata || {};
+            var requiresSelection = !(meta.requiresSelection === false || meta.supportsEmptySelection === true);
             var sel = updateSelectionBanner();
-            if (!sel.length) {
+            if (requiresSelection && !sel.length) {
                 setStatus('Select at least 1 layer in the Scene before clicking "' + item.aeName + '".', warnColor);
                 console.warn('AE Effects [' + item.aeName + ']: No layer selected.');
-                return { ok: false, error: 'No layer selected' };
+                return { ok: false, code: 'NO_SELECTION', error: 'No layer selected' };
             }
 
             var requestedMode = modeOptionFromLabel(modeDropDown.getText());
@@ -301,9 +311,9 @@
             updateSelectionBanner();
 
             if (res && res.ok) {
-                var count = res.appliedCount || (Array.isArray(res.applied) ? res.applied.length : 1);
-                var first = Array.isArray(res.applied) && res.applied[0] ? res.applied[0] : {};
-                var mech = first.mechanism || first.driverType || item.primaryStrategy;
+                var count = res.appliedCount !== undefined ? res.appliedCount : (Array.isArray(res.applied) ? res.applied.length : (Array.isArray(res.results) ? res.results.length : 1));
+                var first = (Array.isArray(res.applied) && res.applied[0]) || (Array.isArray(res.results) && res.results[0]) || {};
+                var mech = first.mechanism || first.driverType || res.workflow || item.primaryStrategy;
                 var act = first.action || 'applied';
                 var warnSuffix = Array.isArray(res.warnings) && res.warnings.length
                     ? ' (' + res.warnings.length + ' skipped)'
@@ -314,6 +324,10 @@
                 if (Array.isArray(res.warnings) && res.warnings.length) {
                     console.warn('AE Effects warnings: ' + res.warnings.join(' | '));
                 }
+            } else if (res && res.partial) {
+                var partMsg = 'Partially applied ' + item.aeName + ': ' + (res.appliedCount || 0) + ' succeeded, ' + (res.failedCount || 0) + ' failed.';
+                setStatus(partMsg, warnColor);
+                console.warn('AE Effects [' + item.aeName + ']: ' + partMsg);
             } else {
                 var errMsg = (res && res.error) ? res.error : 'Failed to apply ' + item.aeName;
                 setStatus(errMsg, warnColor);
@@ -342,7 +356,8 @@
                 filtered.push(e);
                 continue;
             }
-            var hay = (e.aeName + ' ' + e.slug + ' ' + e.category + ' ' + e.aeMatchName).toLowerCase();
+            var aliasStr = Array.isArray(e.aliases) ? e.aliases.join(' ') : '';
+            var hay = (e.aeName + ' ' + e.slug + ' ' + e.category + ' ' + e.aeMatchName + ' ' + aliasStr + ' ' + (e.description || '')).toLowerCase();
             if (hay.indexOf(query) >= 0) filtered.push(e);
         }
 
@@ -394,6 +409,8 @@
         buildEffectRows();
         if (syncRes.reloaded) {
             setStatus('Synced ' + syncRes.count + ' verified effect(s) from library.', accentColor);
+        } else if (syncRes.reason === 'registry-missing') {
+            setStatus('Catalog ready: ' + activeEffects.length + ' bundled effects (standalone mode).', mutedColor);
         } else {
             setStatus('Catalog up to date (' + activeEffects.length + ' effect(s)).', mutedColor);
         }

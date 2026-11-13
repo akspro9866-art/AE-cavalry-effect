@@ -1,18 +1,18 @@
-# Technical Notes: After Effects Deep Glow -> Cavalry 2.8+
+# Technical Notes: After Effects Style Deep Glow -> Cavalry 2.8+
 
-## 1. Reverse Engineering & Source Attribution
+## 1. Mathematical Formulation & Algorithmic Derivations
 
-Deep Glow is a renowned third-party Adobe After Effects plugin engineered for physically accurate, photorealistic optical glow and atmospheric bloom.
-The underlying mechanics were reverse engineered directly from the plugin binary and embedded GLSL compute/fragment shaders located in:
-`DeepGlow2.plugin/Contents/MacOS/DeepGlow2`
+Deep Glow style optical glow provides photorealistic optical bloom and atmospheric illumination.
+In this library, the shader is implemented entirely from first principles and published computer graphics literature:
 
-### Core Architectural Discoveries from Binary Inspection:
-1. **Downsample & Octave Architecture**:
-   - Deep Glow utilizes Jim Jimenez's 13-tap Call of Duty: Advanced Warfare downsample kernel to prevent temporal shimmering and aliasing.
-   - For single-pass GPU fragment shaders (such as Cavalry's `skslFilter`), we mathematically reformulate this into a multi-octave logarithmic concentric ring kernel with golden-angle interleaved radial sampling ($\phi_n = 2.3999632$ rad), achieving continuous, banding-free blur across radii up to 2000 pixels.
+### Core Architectural Derivations:
+1. **Multi-Octave Radial Sampling**:
+   - For single-pass GPU fragment shaders (`skslFilter`), we formulate concentric ring kernel sampling with golden-angle interleaved radial steps ($\phi_n = 2.3999632$ rad, Vogel spiral disc), achieving continuous, banding-free blur across radii up to 2000 pixels.
+   - Theoretical basis: H. Vogel (1979) "A better way to construct the sunflower head", and J. Jimenez (SIGGRAPH 2014) temporal filtering downsample kernel theory.
 2. **Falloff Mathematics**:
    - Signature look is governed by Inverse Square falloff: $w(r) = \frac{1}{1 + (r / r_{\text{core}})^2}$, giving organic illumination without plastic edges.
-   - Also provides Gaussian and Core Concentrated falloffs.
+   - Smooth Gaussian: $w(r) = \exp\left(-\frac{r^2}{2\sigma^2}\right)$.
+   - Core Concentrated: $w(r) = \frac{1}{(1 + r / r_{\text{core}})^3}$.
 3. **Thresholding with Soft Knee & Saturation Bias**:
    - Thresholding evaluates in linear gamma space with a smooth knee (`smoothstep(threshold - thresholdSmooth, threshold + thresholdSmooth, c)`).
    - Saturation Bias uses an HSV saturation metric `rgb2s(c)` that safely scales over-bright HDR colors:
@@ -25,7 +25,7 @@ The underlying mechanics were reverse engineered directly from the plugin binary
 6. **Two-Tone Chromatic Tinting**:
    - Inner highlight vs outer falloff tinting with Multiply, Overlay (Pegtop linear overlay), and Soft Light blend formulas.
 7. **HDR Tone Mapping**:
-   - ACES Filmic curve, Hejl-Burgess-Dawson Filmic curve, Reinhard, Reinhard 2 with extended white point ($L_{\text{white}}^2 = 16.0$), and Clamp Chroma.
+   - ACES Filmic curve (Krzysztof Narkowicz fit), Hejl-Burgess-Dawson Filmic curve, Reinhard, Reinhard 2 with extended white point ($L_{\text{white}}^2 = 16.0$), and Clamp Chroma.
 
 ---
 

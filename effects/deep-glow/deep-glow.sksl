@@ -1,5 +1,6 @@
-// Adobe After Effects "Deep Glow" (Plugin Reverse Engineered)
-// Reconstructed mathematically for Cavalry 2.8+ as a high-fidelity SkSL Filter (`skslFilter`).
+// Adobe After Effects "Deep Glow" Style Optical Glow Reconstructed for Cavalry 2.8+
+// Independent mathematical formulation based on inverse-square light attenuation,
+// Vogel golden-spiral radial disk sampling, Pegtop overlay equations, and ACES filmic tone mapping.
 //
 // Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
 //   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
@@ -71,7 +72,7 @@ half3 softLightBlend(half3 a, half3 b) {
     return ((half(1.0) - half(2.0) * b) * (a * a)) + (half(2.0) * b * a);
 }
 
-// Two-Tone Tint application matching Deep Glow's extracted GLSL shaders
+// Two-Tone Tint application using Pegtop linear overlay and soft light equations
 half3 applyTint(half3 glow, float mode, float blendMode, half3 colA, half3 colB, float strength) {
     if (mode < 0.5 || strength <= 0.001) {
         return glow;

@@ -1,10 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import {
+    resolveProjectRoot,
+    loadStallionBridge,
+    loadStallionMock,
+} from './lib/config.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
-const STALLION_MOCK = pathToFileURL('C:/Users/khada/stallion/dist/stallion-mock.mjs').href;
+const ROOT = resolveProjectRoot();
 
 function parseScalar(raw) {
     const s = String(raw).trim();
@@ -83,10 +86,26 @@ async function main() {
     };
     const script = `var __EFFECT_CONFIG__ = ${JSON.stringify(injectedConfig)};\n${implBody}`;
 
-    const { loadConfig, runScriptWithResult, pingStallion } = await import(CAVALRY_MCP_STALLION);
+    const stallionRes = await loadStallionBridge();
+    if (!stallionRes.available) {
+        console.error(JSON.stringify({
+            ok: false,
+            error: stallionRes.error,
+        }, null, 2));
+        process.exit(2);
+    }
+    const { loadConfig, runScriptWithResult, pingStallion } = stallionRes.module;
 
     if (args.mock) {
-        const { startMockServer } = await import(STALLION_MOCK);
+        const mockRes = await loadStallionMock({ projectRoot: ROOT });
+        if (!mockRes.available) {
+            console.error(JSON.stringify({
+                ok: false,
+                error: mockRes.error,
+            }, null, 2));
+            process.exit(2);
+        }
+        const { startMockServer } = mockRes.module;
         const mock = await startMockServer({ host: '127.0.0.1', port: 0 });
         try {
             const targetId = mock.api.primitive('rectangle', 'Mock Demo Target');

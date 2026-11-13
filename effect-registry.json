@@ -1,9 +1,7 @@
 {
-  "schemaVersion": "1.0.0",
-  "libraryRoot": "C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects",
+  "schemaVersion": "1.1.0",
+  "libraryRoot": ".",
   "infrastructure": {
-    "cavalryMcp": "C:/Users/khada/cavalry-mcp",
-    "stallion": "C:/Users/khada/stallion",
     "stallionUrl": "http://127.0.0.1:8080"
   },
   "effects": {
@@ -20,7 +18,15 @@
         "javaScriptDeformer"
       ],
       "entryScript": "effects/turbulent-displace/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/turbulent-displace/implementation.js",
         "skill": "effects/turbulent-displace/SKILL.md",
         "sksl": "effects/turbulent-displace/turbulent-displace.sksl",
         "deformer": "effects/turbulent-displace/turbulent-displace.deformer.js",
@@ -47,7 +53,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/deep-glow/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/deep-glow/implementation.js",
         "skill": "effects/deep-glow/SKILL.md",
         "sksl": "effects/deep-glow/deep-glow.sksl",
         "parameterMap": "effects/deep-glow/parameter-map.json",
@@ -73,7 +87,15 @@
         "null"
       ],
       "entryScript": "effects/null-object/implementation.js",
+      "metadata": {
+        "requiresSelection": false,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": true,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/null-object/implementation.js",
         "parameterMap": "effects/null-object/parameter-map.json",
         "readme": "effects/null-object/README.md"
       },
@@ -96,7 +118,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/adjustment-layer/implementation.js",
+      "metadata": {
+        "requiresSelection": false,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": true,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/adjustment-layer/implementation.js",
         "parameterMap": "effects/adjustment-layer/parameter-map.json",
         "readme": "effects/adjustment-layer/README.md"
       },
@@ -118,7 +148,15 @@
         "compositionReference"
       ],
       "entryScript": "effects/pre-compose/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": false,
+        "supportsKeyframes": false
+      },
       "artifacts": {
+        "implementation": "effects/pre-compose/implementation.js",
         "parameterMap": "effects/pre-compose/parameter-map.json",
         "readme": "effects/pre-compose/README.md"
       },
@@ -141,7 +179,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/cc-repetile/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/cc-repetile/implementation.js",
         "sksl": "effects/cc-repetile/cc-repetile.sksl",
         "parameterMap": "effects/cc-repetile/parameter-map.json",
         "technicalNotes": "effects/cc-repetile/technical-notes.md",
@@ -165,7 +211,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/gaussian-blur/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/gaussian-blur/implementation.js",
         "sksl": "effects/gaussian-blur/gaussian-blur.sksl",
         "parameterMap": "effects/gaussian-blur/parameter-map.json",
         "readme": "effects/gaussian-blur/README.md"
@@ -188,7 +242,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/fractal-noise/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/fractal-noise/implementation.js",
         "sksl": "effects/fractal-noise/fractal-noise.sksl",
         "parameterMap": "effects/fractal-noise/parameter-map.json",
         "readme": "effects/fractal-noise/README.md"
@@ -210,7 +272,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/tint/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/tint/implementation.js",
         "sksl": "effects/tint/tint.sksl",
         "parameterMap": "effects/tint/parameter-map.json",
         "readme": "effects/tint/README.md"
@@ -232,7 +302,15 @@
         "skslFilter"
       ],
       "entryScript": "effects/cc-ball-action/implementation.js",
+      "metadata": {
+        "requiresSelection": true,
+        "supportsMultipleLayers": true,
+        "supportsEmptySelection": false,
+        "supportsAnimation": true,
+        "supportsKeyframes": true
+      },
       "artifacts": {
+        "implementation": "effects/cc-ball-action/implementation.js",
         "sksl": "effects/cc-ball-action/cc-ball-action.sksl",
         "parameterMap": "effects/cc-ball-action/parameter-map.json",
         "technicalNotes": "effects/cc-ball-action/technical-notes.md",

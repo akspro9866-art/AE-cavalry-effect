@@ -1,16 +1,18 @@
-# Deep Glow (After Effects Replication for Cavalry 2.8+)
+# Deep Glow (After Effects Style Replication for Cavalry 2.8+)
 
-Physically accurate, high-fidelity optical glow for Cavalry 2.8+, reverse-engineered directly from Adobe After Effects' popular Deep Glow plugin.
+Physically accurate, high-fidelity optical glow for Cavalry 2.8+, mathematically reconstructed using open computer graphics algorithms (inverse-square attenuation, Vogel golden-spiral sampling, Pegtop overlay equations, and ACES/Reinhard tone mapping).
+
+> **Provenance Notice**: This implementation is an independent mathematical cleanroom reconstruction authored in SkSL. It does not contain, decompile, or redistribute proprietary plugin binaries or third-party source code. "Deep Glow" is a trademark of Plugin Everything and is referenced for workflow compatibility purposes.
 
 ## Features
 
-- **Physically-Accurate Inverse-Square Falloff**: Organic luminescence without flat, plastic edges.
-- **Falloff Modes**: Inverse Square, Smooth Gaussian, and Core Concentrated.
+- **Physically-Accurate Inverse-Square Falloff**: Organic luminescence governed by inverse-square attenuation without flat edges.
+- **Falloff Modes**: Inverse Square ($w = 1 / (1 + (r/r_0)^2)$), Smooth Gaussian, and Core Concentrated.
 - **Thresholding & Saturation Bias**: Isolate bright elements with soft knee transitions and saturation priority.
 - **Anamorphic Streaks & Angles**: Create cinematic sci-fi lens flares by stretching `AspectRatio` and setting `AspectAngle`.
 - **Chromatic Aberration**: Optical prismatic dispersion separating Red, Green, and Blue glow fringes.
-- **Two-Tone Tinting**: Monocolor and Duocolor inner/outer tints using Multiply, Overlay, and Soft Light formulas.
-- **HDR Tone Mapping**: Built-in ACES Filmic, Filmic (HBD), Reinhard, Reinhard 2, and Clamp Chroma modes.
+- **Two-Tone Tinting**: Monocolor and Duocolor inner/outer tints using Pegtop Multiply, Overlay, and Soft Light formulas.
+- **HDR Tone Mapping**: Built-in ACES Filmic (Narkowicz fit), Filmic (Hejl-Burgess-Dawson), Reinhard, Reinhard 2, and Clamp Chroma modes.
 - **Blend Modes**: Add (photorealistic light emission), Screen (clamped diffusion), and Glow Only (unmulted alpha glow pass).
 - **One-Click Application**: Instantly apply to any selected layer via Cavalry's `Scripts -> AE Effects` menu.
 

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Validate embedded source synchronization
+        run: node scripts/sync-embedded.mjs --check
+
+      - name: Validate AI-agent configuration synchronization
+        run: node scripts/sync-agent-configs.mjs --check
+
+      - name: Validate generated Cavalry script synchronization
+        run: node scripts/sync-cavalry-script.mjs --check
+
+      - name: Run automated test suite (Tiers 1, 2, 3 & 5)
+        run: npm test
