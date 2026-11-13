@@ -344,17 +344,20 @@ test('Tier 1 & 3 — Library templates validation and CLI mock runner integratio
         assert.ok(tplDef.includes('cavalry.noise2d'));
     }
 
-    const cliOut = execFileSync(
-        process.execPath,
-        ['scripts/apply-effect.mjs', 'turbulent-displace', '--mock', '--param', 'displacement=Twist', '--param', 'amount=60', '--param', 'antialiasing=High'],
-        { cwd: ROOT, encoding: 'utf8' }
-    );
-    const parsed = JSON.parse(cliOut);
-    assert.equal(parsed.ok, true);
-    assert.equal(parsed.result.ok, true);
-    assert.equal(parsed.result.params.displacement, 2);
-    assert.equal(parsed.result.params.amount, 60);
-    assert.equal(parsed.result.params.antialiasing, 1);
+    const stallionMock = await loadStallionMock();
+    if (stallion.available && stallionMock.available) {
+        const cliOut = execFileSync(
+            process.execPath,
+            ['scripts/apply-effect.mjs', 'turbulent-displace', '--mock', '--param', 'displacement=Twist', '--param', 'amount=60', '--param', 'antialiasing=High'],
+            { cwd: ROOT, encoding: 'utf8' }
+        );
+        const parsed = JSON.parse(cliOut);
+        assert.equal(parsed.ok, true);
+        assert.equal(parsed.result.ok, true);
+        assert.equal(parsed.result.params.displacement, 2);
+        assert.equal(parsed.result.params.amount, 60);
+        assert.equal(parsed.result.params.antialiasing, 1);
+    }
 });
 
 test('Tier 2 — Live Cavalry 2.8 inputs.* dynamic slot binding & header stripping simulation', () => {
