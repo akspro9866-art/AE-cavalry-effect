@@ -6,9 +6,9 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { syncCavalryScript, resolveCavalryScriptsDir } from '../scripts/sync-cavalry-script.mjs';
+import { loadStallionBridge } from '../scripts/lib/config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CAVALRY_MCP_STALLION_URL = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
 
 function makeTempLibraryCopy() {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ae-cavalry-panel-'));
@@ -192,7 +192,7 @@ test('resolveCavalryScriptsDir resolves Windows APPDATA & explicit overrides', (
 });
 
 test('syncCavalryScript auto-bundles verified effects, excludes drafts, and passes script validation', async () => {
-    const { validateCavalryContextUsage } = await import(CAVALRY_MCP_STALLION_URL);
+    const stallion = await loadStallionBridge();
     const { tmpRoot, scriptsDir, libDir } = makeTempLibraryCopy();
     try {
         // Add a verified 2nd effect ('glow') and an incomplete draft ('unfinished-blur')
@@ -253,8 +253,13 @@ test('syncCavalryScript auto-bundles verified effects, excludes drafts, and pass
         const code = fs.readFileSync(deployedFile, 'utf8');
         assert.equal(code, fs.readFileSync(repoOut, 'utf8'));
 
-        const validation = validateCavalryContextUsage(code, 'script');
-        assert.equal(validation.valid, true, `Unexpected forbidden usages: ${validation.forbiddenUsages.join(', ')}`);
+        if (stallion.available && typeof stallion.module.validateCavalryContextUsage === 'function') {
+            const validation = stallion.module.validateCavalryContextUsage(code, 'script');
+            assert.equal(validation.valid, true, `Unexpected forbidden usages: ${validation.forbiddenUsages.join(', ')}`);
+        } else {
+            assert.ok(!code.includes('cavalry.canvas'));
+            assert.ok(!code.includes('process.exit'));
+        }
 
         const checkRes = syncCavalryScript({
             libraryRoot: libDir,
