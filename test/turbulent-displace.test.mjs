@@ -14,7 +14,8 @@ import {
     normalizeParams,
 } from '../effects/turbulent-displace/math-model.mjs';
 
-import { loadStallionBridge, loadStallionMock } from '../scripts/lib/config.mjs';
+import { loadStallionMock } from '../scripts/lib/config.mjs';
+import { runScriptWithResult } from '../scripts/lib/stallion-client.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EFFECT_DIR = path.join(ROOT, 'effects', 'turbulent-displace');
@@ -26,10 +27,15 @@ const paramMap = JSON.parse(fs.readFileSync(path.join(EFFECT_DIR, 'parameter-map
 const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'effect-registry.json'), 'utf8'));
 
 test('Tier 1 — Static validation of SkSL, Deformer, Applicator, Registry, and Sync', async () => {
-    const stallion = await loadStallionBridge();
+    const stallionMock = await loadStallionMock();
+    assert.ok(
+        stallionMock.available && stallionMock.module && typeof stallionMock.module.validateSkslSource === 'function',
+        `Vendored Stallion mock unavailable (${stallionMock.error || 'unknown error'}). ` +
+        'vendor/stallion-mock.mjs must exist — see vendor/NOTICE.md.'
+    );
 
-    if (stallion.available && typeof stallion.module.validateSkslSource === 'function') {
-        const { validateSkslSource, validateCavalryContextUsage } = stallion.module;
+    {
+        const { validateSkslSource, validateCavalryContextUsage } = stallionMock.module;
         const skslRes = validateSkslSource(skslCode);
         assert.equal(skslRes.valid, true, `Expected valid SkSL, got errors: ${skslRes.errors.join('; ')}`);
         assert.equal(skslRes.errors.length, 0);
@@ -40,11 +46,6 @@ test('Tier 1 — Static validation of SkSL, Deformer, Applicator, Registry, and 
 
         const appRes = validateCavalryContextUsage(implCode, 'script');
         assert.equal(appRes.valid, true, `Applicator context violation: ${appRes.forbiddenUsages.join(', ')}`);
-    } else {
-        assert.ok(skslCode.includes('uniform shader layer;'));
-        assert.ok(skslCode.includes('half4 main(float2 fragCoord)'));
-        assert.ok(!deformerCode.includes('process.exit'));
-        assert.ok(!implCode.includes('process.exit'));
     }
 
     assert.ok(!/^\s*uniform\s+[^;\n]+=/m.test(skslCode), 'SkSL uniforms must not contain inline initializers');
@@ -221,17 +222,16 @@ test('Tier 2 — JavaScript Deformer VM execution with Cavalry 2.8 Mesh & Path.p
 });
 
 test('Tier 3 — Headless Stallion Mock Bridge: selection, attachment, idempotency, animation', async (t) => {
-    const stallion = await loadStallionBridge();
     const stallionMock = await loadStallionMock();
-    if (!stallion.available || !stallionMock.available) {
-        t.skip('External Stallion server not installed in environment; skipping live mock bridge test');
-        return;
-    }
+    assert.ok(
+        stallionMock.available && stallionMock.module && typeof stallionMock.module.startMockServer === 'function',
+        `Vendored Stallion mock unavailable (${stallionMock.error || 'unknown error'}). ` +
+        'vendor/stallion-mock.mjs must exist for the Tier 3 suite — see vendor/NOTICE.md.'
+    );
     const { startMockServer } = stallionMock.module;
-    const { loadConfig, runScriptWithResult } = stallion.module;
 
     const mock = await startMockServer({ host: '127.0.0.1', port: 0 });
-    const cfg = { ...loadConfig(), url: `http://${mock.host}:${mock.port}`, host: mock.host, port: mock.port };
+    const cfg = { url: `http://${mock.host}:${mock.port}` };
 
     try {
         // 1. Empty selection fails cleanly with zero scene mutation
@@ -331,33 +331,30 @@ test('Tier 3 — Headless Stallion Mock Bridge: selection, attachment, idempoten
 });
 
 test('Tier 1 & 3 — Library templates validation and CLI mock runner integration', async () => {
-    const stallion = await loadStallionBridge();
+    const stallionMock = await loadStallionMock();
+    assert.ok(
+        stallionMock.available && stallionMock.module && typeof stallionMock.module.startMockServer === 'function',
+        `Vendored Stallion mock unavailable (${stallionMock.error || 'unknown error'}). ` +
+        'vendor/stallion-mock.mjs must exist for the Tier 3 suite — see vendor/NOTICE.md.'
+    );
+    const { validateSkslSource, validateCavalryContextUsage } = stallionMock.module;
     const tplSksl = fs.readFileSync(path.join(ROOT, 'templates', 'sksl-filter', 'filter-template.sksl'), 'utf8');
     const tplDef = fs.readFileSync(path.join(ROOT, 'templates', 'javascript-deformer', 'deformer-template.js'), 'utf8');
 
-    if (stallion.available && typeof stallion.module.validateSkslSource === 'function') {
-        const { validateSkslSource, validateCavalryContextUsage } = stallion.module;
-        assert.equal(validateSkslSource(tplSksl).valid, true);
-        assert.equal(validateCavalryContextUsage(tplDef, 'javaScriptDeformer').valid, true);
-    } else {
-        assert.ok(tplSksl.includes('uniform shader layer;'));
-        assert.ok(tplDef.includes('cavalry.noise2d'));
-    }
+    assert.equal(validateSkslSource(tplSksl).valid, true);
+    assert.equal(validateCavalryContextUsage(tplDef, 'javaScriptDeformer').valid, true);
 
-    const stallionMock = await loadStallionMock();
-    if (stallion.available && stallionMock.available) {
-        const cliOut = execFileSync(
-            process.execPath,
-            ['scripts/apply-effect.mjs', 'turbulent-displace', '--mock', '--param', 'displacement=Twist', '--param', 'amount=60', '--param', 'antialiasing=High'],
-            { cwd: ROOT, encoding: 'utf8' }
-        );
-        const parsed = JSON.parse(cliOut);
-        assert.equal(parsed.ok, true);
-        assert.equal(parsed.result.ok, true);
-        assert.equal(parsed.result.params.displacement, 2);
-        assert.equal(parsed.result.params.amount, 60);
-        assert.equal(parsed.result.params.antialiasing, 1);
-    }
+    const cliOut = execFileSync(
+        process.execPath,
+        ['scripts/apply-effect.mjs', 'turbulent-displace', '--mock', '--param', 'displacement=Twist', '--param', 'amount=60', '--param', 'antialiasing=High'],
+        { cwd: ROOT, encoding: 'utf8' }
+    );
+    const parsed = JSON.parse(cliOut);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.result.ok, true);
+    assert.equal(parsed.result.params.displacement, 2);
+    assert.equal(parsed.result.params.amount, 60);
+    assert.equal(parsed.result.params.antialiasing, 1);
 });
 
 test('Tier 2 — Live Cavalry 2.8 inputs.* dynamic slot binding & header stripping simulation', () => {

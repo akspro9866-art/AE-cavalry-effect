@@ -6,6 +6,7 @@ import {
     loadStallionBridge,
     loadStallionMock,
 } from './lib/config.mjs';
+import { loadConfig as loadClientConfig, runScriptWithResult } from './lib/stallion-client.mjs';
 
 const ROOT = resolveProjectRoot();
 
@@ -86,17 +87,8 @@ async function main() {
     };
     const script = `var __EFFECT_CONFIG__ = ${JSON.stringify(injectedConfig)};\n${implBody}`;
 
-    const stallionRes = await loadStallionBridge();
-    if (!stallionRes.available) {
-        console.error(JSON.stringify({
-            ok: false,
-            error: stallionRes.error,
-        }, null, 2));
-        process.exit(2);
-    }
-    const { loadConfig, runScriptWithResult, pingStallion } = stallionRes.module;
-
     if (args.mock) {
+        // Mock mode runs fully self-contained: vendored mock server + zero-dep client.
         const mockRes = await loadStallionMock({ projectRoot: ROOT });
         if (!mockRes.available) {
             console.error(JSON.stringify({
@@ -110,7 +102,7 @@ async function main() {
         try {
             const targetId = mock.api.primitive('rectangle', 'Mock Demo Target');
             mock.api.select([targetId]);
-            const cfg = { ...loadConfig(), url: `http://${mock.host}:${mock.port}`, host: mock.host, port: mock.port };
+            const cfg = { url: `http://${mock.host}:${mock.port}` };
             const raw = await runScriptWithResult(script, cfg, { helpers: true });
             const parsed = JSON.parse(raw);
             console.log(JSON.stringify({ runtime: 'stallion-mock', ...parsed }, null, 2));
@@ -119,6 +111,16 @@ async function main() {
             await mock.close();
         }
     }
+
+    const stallionRes = await loadStallionBridge();
+    if (!stallionRes.available) {
+        console.error(JSON.stringify({
+            ok: false,
+            error: stallionRes.error,
+        }, null, 2));
+        process.exit(2);
+    }
+    const { loadConfig, runScriptWithResult: runBridgeScript, pingStallion } = stallionRes.module;
 
     const cfg = loadConfig();
     const alive = await pingStallion(cfg);
@@ -131,7 +133,7 @@ async function main() {
         process.exit(2);
     }
 
-    const raw = await runScriptWithResult(script, cfg, { helpers: true });
+    const raw = await runBridgeScript(script, cfg, { helpers: true });
     let parsed;
     try {
         parsed = JSON.parse(raw);

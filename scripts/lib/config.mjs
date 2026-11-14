@@ -95,7 +95,8 @@ export function resolveStallionModuleUrl({
 
 /**
  * Resolves the stallion mock module URL for headless simulation.
- * Checks STALLION_MOCK env var, then stallion sibling or home folder.
+ * Checks STALLION_MOCK env var, then the vendored copy in <root>/vendor, then
+ * a stallion sibling checkout or home folder (legacy developer setups).
  */
 export function resolveStallionMockUrl({
     override = process.env.STALLION_MOCK,
@@ -107,6 +108,7 @@ export function resolveStallionMockUrl({
         if (fs.existsSync(abs)) return pathToFileURL(abs).href;
     }
     const candidates = [
+        path.resolve(projectRoot, 'vendor', 'stallion-mock.mjs'),
         path.resolve(projectRoot, '..', 'stallion', 'dist', 'stallion-mock.mjs'),
         path.join(home, 'stallion', 'dist', 'stallion-mock.mjs'),
     ];

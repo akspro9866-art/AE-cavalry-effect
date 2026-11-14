@@ -4,10 +4,10 @@
  *   - MAE (Mean Absolute Error)
  *   - MSE (Mean Squared Error)
  *   - PSNR (Peak Signal-to-Noise Ratio in dB)
- *   - SSIM (Structural Similarity Index)
+ *   - SSIM (Structural Similarity Index, 8x8 windowed per Wang et al. 2004)
  *   - Alpha Channel Deviation
  *   - Color Deviation (Euclidean RGB delta)
- *   - Edge Gradient Deviation (Sobel convolution)
+ *   - Edge Gradient Deviation (Sobel convolution, MAE between gradient maps)
  */
 
 import fs from 'node:fs';
@@ -132,26 +132,11 @@ export function compareImages(imgA, imgB, options = {}) {
     let sumColorDelta = 0;
     let maxDiff = 0;
 
-    let sumA = 0;
-    let sumB = 0;
-    let sumSqA = 0;
-    let sumSqB = 0;
-    let sumProdAB = 0;
-
     for (let i = 0; i < totalPixels * 4; i += 4) {
         const dr = Math.abs(a[i] - b[i]);
         const dg = Math.abs(a[i + 1] - b[i + 1]);
         const db = Math.abs(a[i + 2] - b[i + 2]);
         const da = Math.abs(a[i + 3] - b[i + 3]);
-
-        const lumaA = 0.299 * a[i] + 0.587 * a[i + 1] + 0.114 * a[i + 2];
-        const lumaB = 0.299 * b[i] + 0.587 * b[i + 1] + 0.114 * b[i + 2];
-
-        sumA += lumaA;
-        sumB += lumaB;
-        sumSqA += lumaA * lumaA;
-        sumSqB += lumaB * lumaB;
-        sumProdAB += lumaA * lumaB;
 
         sumAbsDiffRgb += dr + dg + db;
         sumSqDiffRgb += dr * dr + dg * dg + db * db;
@@ -168,18 +153,11 @@ export function compareImages(imgA, imgB, options = {}) {
     const alphaDeviation = sumAbsDiffAlpha / totalPixels;
     const colorDeviation = sumColorDelta / totalPixels;
 
-    // Simplified global SSIM computation
-    const muA = sumA / totalPixels;
-    const muB = sumB / totalPixels;
-    const varA = (sumSqA / totalPixels) - (muA * muA);
-    const varB = (sumSqB / totalPixels) - (muB * muB);
-    const covar = (sumProdAB / totalPixels) - (muA * muB);
-
-    const c1 = (0.01 * 255) * (0.01 * 255);
-    const c2 = (0.03 * 255) * (0.03 * 255);
-    const ssimNum = (2 * muA * muB + c1) * (2 * covar + c2);
-    const ssimDen = (muA * muA + muB * muB + c1) * (varA + varB + c2);
-    const ssim = ssimDen !== 0 ? Math.max(0, Math.min(1, ssimNum / ssimDen)) : 1.0;
+    // Structural metrics over the Rec. 601 luma plane.
+    const lumaA = lumaPlane(imgA);
+    const lumaB = lumaPlane(imgB);
+    const ssim = computeWindowedSsim(lumaA, lumaB, imgA.width, imgA.height);
+    const sobelEdgeDeviation = computeSobelEdgeDeviation(lumaA, lumaB, imgA.width, imgA.height);
 
     return {
         width: imgA.width,
@@ -189,10 +167,120 @@ export function compareImages(imgA, imgB, options = {}) {
         mse: Number(mse.toFixed(4)),
         psnr: Number(psnr.toFixed(2)),
         ssim: Number(ssim.toFixed(4)),
+        sobelEdgeDeviation: Number(sobelEdgeDeviation.toFixed(4)),
         alphaDeviation: Number(alphaDeviation.toFixed(4)),
         colorDeviation: Number(colorDeviation.toFixed(4)),
         maxPixelDiff: maxDiff,
     };
+}
+
+/**
+ * Computes the Rec. 601 luma plane of an image as a Float64Array.
+ */
+function lumaPlane(img) {
+    const out = new Float64Array(img.width * img.height);
+    const d = img.data;
+    for (let i = 0, p = 0; p < out.length; i += 4, p++) {
+        out[p] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    }
+    return out;
+}
+
+/**
+ * Windowed SSIM (Wang et al. 2004) over an 8x8 grid with 1-pixel stride,
+ * averaged over all valid windows. Falls back to the global SSIM for images
+ * smaller than one window.
+ */
+function computeWindowedSsim(lumaA, lumaB, width, height) {
+    const c1 = (0.01 * 255) * (0.01 * 255);
+    const c2 = (0.03 * 255) * (0.03 * 255);
+    const win = 8;
+
+    if (width < win || height < win) {
+        // Degenerate size: single global window over all pixels.
+        let sumA = 0, sumB = 0, sumSqA = 0, sumSqB = 0, sumProd = 0;
+        const n = width * height;
+        for (let p = 0; p < n; p++) {
+            sumA += lumaA[p]; sumB += lumaB[p];
+            sumSqA += lumaA[p] * lumaA[p]; sumSqB += lumaB[p] * lumaB[p];
+            sumProd += lumaA[p] * lumaB[p];
+        }
+        const muA = sumA / n, muB = sumB / n;
+        const varA = sumSqA / n - muA * muA;
+        const varB = sumSqB / n - muB * muB;
+        const cov = sumProd / n - muA * muB;
+        const num = (2 * muA * muB + c1) * (2 * cov + c2);
+        const den = (muA * muA + muB * muB + c1) * (varA + varB + c2);
+        return den !== 0 ? Math.max(0, Math.min(1, num / den)) : 1.0;
+    }
+
+    let ssimSum = 0;
+    let windows = 0;
+    for (let wy = 0; wy + win <= height; wy++) {
+        for (let wx = 0; wx + win <= width; wx++) {
+            let sumA = 0, sumB = 0, sumSqA = 0, sumSqB = 0, sumProd = 0;
+            for (let y = wy; y < wy + win; y++) {
+                const row = y * width;
+                for (let x = wx; x < wx + win; x++) {
+                    const va = lumaA[row + x];
+                    const vb = lumaB[row + x];
+                    sumA += va; sumB += vb;
+                    sumSqA += va * va; sumSqB += vb * vb;
+                    sumProd += va * vb;
+                }
+            }
+            const n = win * win;
+            const muA = sumA / n, muB = sumB / n;
+            const varA = sumSqA / n - muA * muA;
+            const varB = sumSqB / n - muB * muB;
+            const cov = sumProd / n - muA * muB;
+            const num = (2 * muA * muB + c1) * (2 * cov + c2);
+            const den = (muA * muA + muB * muB + c1) * (varA + varB + c2);
+            ssimSum += den !== 0 ? Math.max(0, Math.min(1, num / den)) : 1.0;
+            windows++;
+        }
+    }
+    return ssimSum / windows;
+}
+
+/**
+ * Sobel edge gradient magnitude MAE between the two luma planes.
+ * Border pixels (no full 3x3 neighborhood) use the clamped neighborhood.
+ * Returned value is normalized to the 0-255 gradient scale (lower is closer).
+ */
+function computeSobelEdgeDeviation(lumaA, lumaB, width, height) {
+    const magA = new Float64Array(width * height);
+    const magB = new Float64Array(width * height);
+    const at = (plane, x, y) => plane[Math.min(height - 1, Math.max(0, y)) * width + Math.min(width - 1, Math.max(0, x))];
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let gx = 0, gy = 0;
+            // Sobel kernels applied identically to both planes.
+            const x0 = x - 1, x2 = x + 1, y0 = y - 1, y2 = y + 1;
+            const tl = at(lumaA, x0, y0), tc = at(lumaA, x, y0), tr = at(lumaA, x2, y0);
+            const ml = at(lumaA, x0, y), mr = at(lumaA, x2, y);
+            const bl = at(lumaA, x0, y2), bc = at(lumaA, x, y2), br = at(lumaA, x2, y2);
+            gx = (tr + 2 * mr + br) - (tl + 2 * ml + bl);
+            gy = (bl + 2 * bc + br) - (tl + 2 * tc + tr);
+            magA[y * width + x] = Math.sqrt(gx * gx + gy * gy);
+
+            let gx2 = 0, gy2 = 0;
+            const tl2 = at(lumaB, x0, y0), tc2 = at(lumaB, x, y0), tr2 = at(lumaB, x2, y0);
+            const ml2 = at(lumaB, x0, y), mr2 = at(lumaB, x2, y);
+            const bl2 = at(lumaB, x0, y2), bc2 = at(lumaB, x, y2), br2 = at(lumaB, x2, y2);
+            gx2 = (tr2 + 2 * mr2 + br2) - (tl2 + 2 * ml2 + bl2);
+            gy2 = (bl2 + 2 * bc2 + br2) - (tl2 + 2 * tc2 + tr2);
+            magB[y * width + x] = Math.sqrt(gx2 * gx2 + gy2 * gy2);
+        }
+    }
+
+    let sum = 0;
+    const n = width * height;
+    for (let p = 0; p < n; p++) {
+        sum += Math.abs(magA[p] - magB[p]);
+    }
+    return sum / n;
 }
 
 /**

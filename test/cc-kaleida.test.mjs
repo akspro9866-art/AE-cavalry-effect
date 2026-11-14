@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 import * as mathModel from '../effects/cc-kaleida/math-model.mjs';
+import { createMockCavalry } from './lib/mock-cavalry.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EFFECT_DIR = path.join(ROOT, 'effects', 'cc-kaleida');
@@ -67,50 +68,7 @@ test('CC Kaleida — Tier 2: Mathematical invariants (Polar Mapping & Seamless B
 test('CC Kaleida — Tier 3: Headless Mock Stallion execution & dynamic slots', () => {
     const implSource = fs.readFileSync(path.join(EFFECT_DIR, 'implementation.js'), 'utf8');
 
-    const createdNodes = [];
-    const nodeAttributes = {};
-    const customNames = {};
-    const connections = [];
-
-    const mockApi = {
-        create: (type) => {
-            const id = `${type}_${createdNodes.length + 1}`;
-            createdNodes.push({ id, type });
-            nodeAttributes[id] = ['code'];
-            return id;
-        },
-        setName: (id, name) => {},
-        set: (id, payload) => {
-            for (const [k, v] of Object.entries(payload)) {
-                if (!nodeAttributes[id].includes(k)) {
-                    nodeAttributes[id].push(k);
-                }
-                nodeAttributes[id][`_val_${k}`] = v;
-            }
-            return true;
-        },
-        getAttributes: (id) => nodeAttributes[id] || [],
-        addDynamic: (id, group, type) => {
-            let idx = 0;
-            while (nodeAttributes[id].includes(`${group}.${idx}`)) {
-                idx++;
-            }
-            const slot = `${group}.${idx}`;
-            nodeAttributes[id].push(slot);
-            return slot;
-        },
-        renameAttribute: (id, slot, newName) => {
-            customNames[`${id}:${slot}`] = newName;
-            return true;
-        },
-        getCustomAttributeName: (id, slot) => {
-            return customNames[`${id}:${slot}`] || '';
-        },
-        connect: (srcId, srcAttr, dstId, dstAttr) => {
-            connections.push({ srcId, srcAttr, dstId, dstAttr });
-            return true;
-        }
-    };
+    const { api: mockApi, createdNodes, nodeAttributes, customNames, connections } = createMockCavalry({ initialAttrs: ['code'] });
 
     const ctx = {
         api: mockApi,
