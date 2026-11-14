@@ -1,0 +1,73 @@
+{
+  "effectSlug": "drop-shadow",
+  "aeName": "Drop Shadow",
+  "aeMatchName": "ADBE Drop Shadow",
+  "aeCategory": "Perspective",
+  "provenanceNote": "Reconstructs Adobe After Effects Drop Shadow (ADBE Drop Shadow) with polar offset vectors, Vogel golden-spiral alpha diffusion, and Porter-Duff Over compositing.",
+  "parameters": [
+    {
+      "id": "ShadowColor",
+      "slot": "inputs.0",
+      "type": "color",
+      "aeName": "Shadow Color",
+      "default": { "r": 0, "g": 0, "b": 0, "a": 255 },
+      "description": "Color swatch of the cast shadow."
+    },
+    {
+      "id": "Opacity",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Opacity",
+      "default": 50.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Alpha opacity of the shadow."
+    },
+    {
+      "id": "Direction",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Direction",
+      "default": 135.0,
+      "min": 0.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Light projection angle in degrees."
+    },
+    {
+      "id": "Distance",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Distance",
+      "default": 5.0,
+      "min": 0.0,
+      "max": 1000.0,
+      "unit": "pixels",
+      "description": "Offset distance of the shadow."
+    },
+    {
+      "id": "Softness",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Softness",
+      "default": 5.0,
+      "min": 0.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Gaussian blur radius of the shadow."
+    },
+    {
+      "id": "ShadowOnly",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Shadow Only",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Renders solely the shadow channel without the original foreground."
+    }
+  ]
+}

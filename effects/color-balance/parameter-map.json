@@ -1,0 +1,111 @@
+{
+  "effectSlug": "color-balance",
+  "aeName": "Color Balance",
+  "aeMatchName": "ADBE Color Balance2",
+  "aeCategory": "Color Correction",
+  "provenanceNote": "Reconstructs Adobe After Effects Color Balance (ADBE Color Balance2) using smooth partition-of-unity luminance weighting across tonal zones with luminosity preservation.",
+  "parameters": [
+    {
+      "id": "ShadowRed",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Shadow Red Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts red tint in dark tonal regions."
+    },
+    {
+      "id": "ShadowGreen",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Shadow Green Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts green tint in dark tonal regions."
+    },
+    {
+      "id": "ShadowBlue",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Shadow Blue Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts blue tint in dark tonal regions."
+    },
+    {
+      "id": "MidtoneRed",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Midtone Red Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts red tint in midtone tonal regions."
+    },
+    {
+      "id": "MidtoneGreen",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Midtone Green Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts green tint in midtone tonal regions."
+    },
+    {
+      "id": "MidtoneBlue",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Midtone Blue Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts blue tint in midtone tonal regions."
+    },
+    {
+      "id": "HighlightRed",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Highlight Red Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts red tint in bright tonal regions."
+    },
+    {
+      "id": "HighlightGreen",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Highlight Green Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts green tint in bright tonal regions."
+    },
+    {
+      "id": "HighlightBlue",
+      "slot": "inputs.8",
+      "type": "double",
+      "aeName": "Highlight Blue Balance",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Adjusts blue tint in bright tonal regions."
+    },
+    {
+      "id": "PreserveLuminosity",
+      "slot": "inputs.9",
+      "type": "double",
+      "aeName": "Preserve Luminosity",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Locks overall perceptual image brightness during chromatic adjustments."
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "effectSlug": "hue-saturation",
+  "aeName": "Hue/Saturation",
+  "aeMatchName": "ADBE HUE SATURATION",
+  "aeCategory": "Color Correction",
+  "provenanceNote": "Reconstructs Adobe After Effects Hue/Saturation (ADBE HUE SATURATION) with continuous RGB/HSL polar color conversions, saturation scaling, and colorize mode.",
+  "parameters": [
+    {
+      "id": "ChannelControl",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Channel Control",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Master" },
+        { "value": 1, "label": "Reds" },
+        { "value": 2, "label": "Yellows" },
+        { "value": 3, "label": "Greens" },
+        { "value": 4, "label": "Cyans" },
+        { "value": 5, "label": "Blues" },
+        { "value": 6, "label": "Magentas" }
+      ],
+      "description": "Channel range to adjust."
+    },
+    {
+      "id": "MasterHue",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Master Hue",
+      "default": 0.0,
+      "min": -180.0,
+      "max": 180.0,
+      "unit": "degrees",
+      "description": "Angular hue shift around color wheel."
+    },
+    {
+      "id": "MasterSaturation",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Master Saturation",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Saturation intensity adjustment."
+    },
+    {
+      "id": "MasterLightness",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Master Lightness",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Tonal lightness adjustment."
+    },
+    {
+      "id": "Colorize",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Colorize",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Monochrome tinting mode using explicit Hue and Saturation."
+    },
+    {
+      "id": "ColorizeHue",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Colorize Hue",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Target hue angle for colorization."
+    },
+    {
+      "id": "ColorizeSaturation",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Colorize Saturation",
+      "default": 50.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Target saturation for colorization."
+    },
+    {
+      "id": "ColorizeLightness",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Colorize Lightness",
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Target lightness bias for colorization."
+    }
+  ]
+}

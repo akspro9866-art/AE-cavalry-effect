@@ -1,0 +1,54 @@
+{
+  "effectSlug": "sharpen",
+  "aeName": "Sharpen",
+  "aeMatchName": "ADBE Sharpen",
+  "aeCategory": "Blur & Sharpen",
+  "provenanceNote": "Reconstructs Adobe After Effects Sharpen (ADBE Sharpen) with an 8-neighbor unsharp-mask convolution and contrast thresholding.",
+  "parameters": [
+    {
+      "id": "SharpenAmount",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Sharpen Amount",
+      "default": 25.0,
+      "min": 0.0,
+      "max": 500.0,
+      "unit": "ratio",
+      "description": "High-frequency edge enhancement intensity."
+    },
+    {
+      "id": "Radius",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Radius",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 10.0,
+      "unit": "pixels",
+      "description": "Sampling radius for neighborhood convolution."
+    },
+    {
+      "id": "Threshold",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Threshold",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 255.0,
+      "unit": "levels",
+      "description": "Minimum contrast required before edge amplification is applied."
+    },
+    {
+      "id": "PreserveAlpha",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Preserve Alpha",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Prevents halo noise on transparent silhouette boundaries."
+    }
+  ]
+}

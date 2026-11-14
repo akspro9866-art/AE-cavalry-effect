@@ -1,0 +1,99 @@
+// Adobe After Effects "Glow" (ADBE Glo2)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.10`):
+uniform float GlowBasedOn;        // 0 = Color Channels, 1 = Alpha Channel
+uniform float GlowThreshold;      // Brightness threshold percent (default: 60.0, range: 0.0 to 100.0)
+uniform float GlowRadius;         // Diffusion radius in pixels (default: 10.0, range: 0.0 to 500.0)
+uniform float GlowIntensity;      // Intensity multiplier (default: 1.0, range: 0.0 to 10.0)
+uniform float CompositeOriginal;  // 0 = Behind, 1 = On Top, 2 = None
+uniform float GlowOperation;      // 0 = Add, 1 = Screen
+uniform float GlowColors;         // 0 = Original Colors, 1 = A & B Colors
+uniform half4 ColorA;             // Swatch A (default: RGB(255, 255, 255))
+uniform half4 ColorB;             // Swatch B (default: RGB(0, 0, 0))
+uniform float ColorLooping;       // Ramp cycles (default: 1.0)
+uniform float ColorPhase;         // Phase offset in degrees (default: 0.0)
+
+float extractGlowFactor(half4 s, float threshNorm, bool useAlpha) {
+    if (useAlpha) {
+        float a = float(s.a);
+        if (a <= threshNorm) return 0.0;
+        return clamp((a - threshNorm) / max(1.0 - threshNorm, 1e-4), 0.0, 1.0);
+    }
+    float a = max(float(s.a), 1e-4);
+    float3 unmult = float3(s.rgb) / a;
+    float luma = dot(unmult, float3(0.299, 0.587, 0.114));
+    if (luma <= threshNorm) return 0.0;
+    return clamp((luma - threshNorm) / max(1.0 - threshNorm, 1e-4), 0.0, 1.0);
+}
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+
+    if (GlowIntensity <= 0.001) {
+        return src;
+    }
+
+    float threshNorm = GlowThreshold / 100.0;
+    bool useAlpha = (GlowBasedOn > 0.5);
+    float maxR = max(GlowRadius, 1.0);
+
+    // 24-tap Vogel golden spiral for smooth multi-stage glow diffusion
+    half3 glowAccum = half3(0.0);
+    float glowAlphaAccum = 0.0;
+    float totalW = 0.0;
+
+    for (int i = 0; i < 24; i++) {
+        float fi = float(i);
+        float r = maxR * sqrt((fi + 0.5) / 24.0);
+        float phi = fi * 2.39996323; // Golden angle
+        float2 offset = float2(cos(phi), sin(phi)) * r;
+        float w = exp(-(r * r) / (2.0 * maxR * maxR * 0.3));
+
+        half4 tapCol = layer.eval(fragCoord + offset);
+        float factor = extractGlowFactor(tapCol, threshNorm, useAlpha);
+
+        glowAccum += tapCol.rgb * half(factor * w);
+        glowAlphaAccum += float(tapCol.a) * factor * w;
+        totalW += w;
+    }
+
+    float normW = max(totalW, 1e-4);
+    glowAccum = (glowAccum / half(normW)) * half(GlowIntensity);
+    float glowAlpha = clamp((glowAlphaAccum / normW) * GlowIntensity, 0.0, 1.0);
+
+    // Colorize A & B Colors mode
+    if (GlowColors > 0.5) {
+        float glowLuma = dot(float3(glowAccum), float3(0.299, 0.587, 0.114));
+        float t = fract(glowLuma * max(ColorLooping, 1.0) + ColorPhase / 360.0);
+        half3 mappedCol = mix(ColorA.rgb, ColorB.rgb, half(t));
+        glowAccum = mappedCol * half(glowAlpha);
+    }
+
+    // Compositing
+    int compMode = int(floor(CompositeOriginal + 0.5));
+    int opMode = int(floor(GlowOperation + 0.5));
+
+    if (compMode == 2) {
+        // None: Glow Only
+        return half4(glowAccum, half(glowAlpha));
+    }
+
+    half3 finalRgb = half3(0.0);
+    if (opMode == 0) {
+        // Add
+        finalRgb = src.rgb + glowAccum;
+    } else {
+        // Screen
+        finalRgb = src.rgb + glowAccum - (src.rgb * glowAccum);
+    }
+
+    float finalAlpha = max(float(src.a), glowAlpha);
+    return half4(clamp(finalRgb, half3(0.0), half3(1.0)), half(finalAlpha));
+}

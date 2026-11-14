@@ -1,0 +1,42 @@
+{
+  "effectSlug": "exposure",
+  "aeName": "Exposure",
+  "aeMatchName": "ADBE Exposure",
+  "aeCategory": "Color Correction",
+  "provenanceNote": "Reconstructs Adobe After Effects Exposure (ADBE Exposure) using exponential EV stop gain, offset bias, and gamma correction curve.",
+  "parameters": [
+    {
+      "id": "Exposure",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Exposure",
+      "default": 0.0,
+      "min": -10.0,
+      "max": 10.0,
+      "unit": "stops",
+      "description": "Exposure gain in powers of two (EV stops)."
+    },
+    {
+      "id": "Offset",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Offset",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "unit": "ratio",
+      "description": "Linear additive offset bias to black levels."
+    },
+    {
+      "id": "GammaCorrection",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Gamma Correction",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 5.0,
+      "unit": "ratio",
+      "description": "Non-linear gamma curve remapping."
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "effectSlug": "directional-blur",
+  "aeName": "Directional Blur",
+  "aeMatchName": "ADBE Directional Blur",
+  "aeCategory": "Blur & Sharpen",
+  "provenanceNote": "Reconstructs Adobe After Effects Directional Blur (ADBE Directional Blur) using linear triangular convolution along a normalized 2D direction vector with canvas expansion padding.",
+  "parameters": [
+    {
+      "id": "Direction",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Direction",
+      "default": 0.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Angle of blur direction (0 = Vertical, 90 = Horizontal)."
+    },
+    {
+      "id": "BlurLength",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Blur Length",
+      "default": 10.0,
+      "min": 0.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Total length of blur diffusion in pixels."
+    },
+    {
+      "id": "RepeatEdgePixels",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Repeat Edge Pixels",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Clamps texture sampling at bounds to prevent transparent edge vignetting."
+    }
+  ]
+}

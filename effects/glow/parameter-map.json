@@ -1,0 +1,129 @@
+{
+  "effectSlug": "glow",
+  "aeName": "Glow",
+  "aeMatchName": "ADBE Glo2",
+  "aeCategory": "Lighting & Glow",
+  "provenanceNote": "Reconstructs native Adobe After Effects Glow (ADBE Glo2) with luminance/alpha threshold gating, multi-stage golden spiral diffusion, A/B color ramp looping, and Add/Screen compositing.",
+  "parameters": [
+    {
+      "id": "GlowBasedOn",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Glow Based On",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Color Channels" },
+        { "value": 1, "label": "Alpha Channel" }
+      ],
+      "description": "Source data driving the glow threshold."
+    },
+    {
+      "id": "GlowThreshold",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Glow Threshold",
+      "default": 60.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Brightness cutoff below which no glow is produced."
+    },
+    {
+      "id": "GlowRadius",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Glow Radius",
+      "default": 10.0,
+      "min": 0.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Distance of light emission spread."
+    },
+    {
+      "id": "GlowIntensity",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Glow Intensity",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "unit": "multiplier",
+      "description": "Luminance multiplier for glow."
+    },
+    {
+      "id": "CompositeOriginal",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Composite Original",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Behind" },
+        { "value": 1, "label": "On Top" },
+        { "value": 2, "label": "None" }
+      ],
+      "description": "Placement of the original image relative to the glow."
+    },
+    {
+      "id": "GlowOperation",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Glow Operation",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Add" },
+        { "value": 1, "label": "Screen" }
+      ],
+      "description": "Mathematical blending mode used to merge glow."
+    },
+    {
+      "id": "GlowColors",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Glow Colors",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Original Colors" },
+        { "value": 1, "label": "A & B Colors" }
+      ],
+      "description": "Generate glow using source colors or user palette."
+    },
+    {
+      "id": "ColorA",
+      "slot": "inputs.7",
+      "type": "color",
+      "aeName": "Color A",
+      "default": { "r": 255, "g": 255, "b": 255, "a": 255 },
+      "description": "Gradient endpoint A for stylized color glow."
+    },
+    {
+      "id": "ColorB",
+      "slot": "inputs.8",
+      "type": "color",
+      "aeName": "Color B",
+      "default": { "r": 0, "g": 0, "b": 0, "a": 255 },
+      "description": "Gradient endpoint B for stylized color glow."
+    },
+    {
+      "id": "ColorLooping",
+      "slot": "inputs.9",
+      "type": "double",
+      "aeName": "Color Looping",
+      "default": 1.0,
+      "min": 1.0,
+      "max": 10.0,
+      "unit": "cycles",
+      "description": "Frequency repetitions of the A/B color ramp."
+    },
+    {
+      "id": "ColorPhase",
+      "slot": "inputs.10",
+      "type": "double",
+      "aeName": "Color Phase",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Rotational phase offset of the A/B color ramp."
+    }
+  ]
+}

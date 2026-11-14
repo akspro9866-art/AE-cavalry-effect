@@ -1,0 +1,32 @@
+{
+  "effectSlug": "find-edges",
+  "aeName": "Find Edges",
+  "aeMatchName": "ADBE Find Edges",
+  "aeCategory": "Stylize",
+  "provenanceNote": "Reconstructs Adobe After Effects Find Edges (ADBE Find Edges) using 3x3 Sobel spatial gradient convolution with silhouette alpha preservation and inversion modes.",
+  "parameters": [
+    {
+      "id": "Invert",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Invert",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off (Dark Lines on White)" },
+        { "value": 1, "label": "On (Bright Lines on Black)" }
+      ],
+      "description": "Inverts edge representation from sketch drawing to glowing contour lines."
+    },
+    {
+      "id": "BlendWithOriginal",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Blend With Original",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Transparency blend between edge output and source layer."
+    }
+  ]
+}

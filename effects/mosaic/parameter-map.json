@@ -1,0 +1,43 @@
+{
+  "effectSlug": "mosaic",
+  "aeName": "Mosaic",
+  "aeMatchName": "ADBE Mosaic",
+  "aeCategory": "Stylize",
+  "provenanceNote": "Reconstructs Adobe After Effects Mosaic (ADBE Mosaic) with 2D coordinate cell quantization and sharp representative color sampling.",
+  "parameters": [
+    {
+      "id": "HorizontalBlocks",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Horizontal Blocks",
+      "default": 10.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "blocks",
+      "description": "Number of horizontal cell divisions."
+    },
+    {
+      "id": "VerticalBlocks",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Vertical Blocks",
+      "default": 10.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "blocks",
+      "description": "Number of vertical cell divisions."
+    },
+    {
+      "id": "SharpColors",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Sharp Colors",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Quantizes sampled colors to sharp discrete levels."
+    }
+  ]
+}

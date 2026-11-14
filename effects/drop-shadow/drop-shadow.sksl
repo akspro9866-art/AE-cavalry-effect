@@ -1,0 +1,57 @@
+// Adobe After Effects "Drop Shadow" (ADBE Drop Shadow)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform half4 ShadowColor;   // Color of drop shadow (default: RGB(0, 0, 0))
+uniform float Opacity;       // Opacity percent (default: 50.0, range: 0.0 to 100.0)
+uniform float Direction;     // Direction angle in degrees (default: 135.0, range: 0.0 to 360.0)
+uniform float Distance;      // Offset distance in pixels (default: 5.0, range: 0.0 to 1000.0)
+uniform float Softness;      // Blur softness in pixels (default: 5.0, range: 0.0 to 500.0)
+uniform float ShadowOnly;    // 0 = Composite with original, 1 = Shadow Only (default: 0.0)
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+
+    float rad = Direction * 0.017453292519943295;
+    float2 offset = float2(cos(rad), sin(rad)) * Distance;
+    float2 shadowCoord = fragCoord - offset;
+
+    float shadowAlpha = 0.0;
+
+    if (Softness <= 0.5) {
+        shadowAlpha = float(layer.eval(shadowCoord).a);
+    } else {
+        // 16-tap Vogel spiral blur for smooth isotropic shadow diffusion
+        float totalW = 0.0;
+        float maxR = Softness * 1.5;
+
+        for (int i = 0; i < 16; i++) {
+            float fi = float(i);
+            float r = maxR * sqrt((fi + 0.5) / 16.0);
+            float phi = fi * 2.39996323; // Golden angle
+            float2 tapOffset = float2(cos(phi), sin(phi)) * r;
+            float w = exp(-(r * r) / (2.0 * maxR * maxR * 0.25));
+
+            shadowAlpha += float(layer.eval(shadowCoord + tapOffset).a) * w;
+            totalW += w;
+        }
+        shadowAlpha /= max(totalW, 1e-4);
+    }
+
+    float finalShadowA = shadowAlpha * (Opacity / 100.0) * float(ShadowColor.a);
+    half4 shadowCol = half4(ShadowColor.rgb * half(finalShadowA), half(finalShadowA));
+
+    if (ShadowOnly > 0.5) {
+        return shadowCol;
+    }
+
+    // Porter-Duff 'Over' composition: Source over Shadow
+    half4 outCol = src + shadowCol * half(1.0 - float(src.a));
+    return outCol;
+}

@@ -1,0 +1,95 @@
+// Adobe After Effects "Wave Warp" (ADBE Wave Warp)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.6`):
+uniform float WaveType;    // 0 = Sine, 1 = Square, 2 = Triangle, 3 = Sawtooth, 4 = Circles, 5 = Semicircles
+uniform float WaveHeight;  // Amplitude of wave displacement in pixels (default: 10.0, range: -100.0 to 100.0)
+uniform float WaveWidth;   // Wavelength in pixels (default: 40.0, range: 1.0 to 500.0)
+uniform float Direction;   // Propagation angle in degrees (default: 90.0, range: -360.0 to 360.0)
+uniform float WaveSpeed;   // Animation rate (default: 1.0)
+uniform float Phase;       // Phase offset in degrees (default: 0.0, range: -360.0 to 360.0)
+uniform float Pinning;     // 0 = None, 1 = All, 2 = Top, 3 = Bottom, 4 = Left, 5 = Right
+
+float evaluateWaveform(float phi, int wType) {
+    float t = fract(phi * 0.15915494309189535); // phi / (2*pi)
+
+    if (wType == 1) {
+        // Square
+        return t < 0.5 ? 1.0 : -1.0;
+    } else if (wType == 2) {
+        // Triangle
+        return 2.0 * abs(2.0 * t - 1.0) - 1.0;
+    } else if (wType == 3) {
+        // Sawtooth
+        return 2.0 * t - 1.0;
+    } else if (wType == 4) {
+        // Circles
+        float x = 2.0 * t - 1.0;
+        return sqrt(max(1.0 - x * x, 0.0)) * 2.0 - 1.0;
+    } else if (wType == 5) {
+        // Semicircles
+        float x = t < 0.5 ? (4.0 * t - 1.0) : (4.0 * (t - 0.5) - 1.0);
+        float circ = sqrt(max(1.0 - x * x, 0.0));
+        return t < 0.5 ? circ : -circ;
+    }
+
+    // 0 = Sine
+    return sin(phi);
+}
+
+float computePinFactor(float2 coord, float2 halfRes, int pin) {
+    if (pin == 0) return 1.0;
+    float2 normDist = clamp((halfRes - abs(coord)) / max(halfRes, float2(1.0)), 0.0, 1.0);
+
+    if (pin == 1) {
+        // All Edges
+        return min(normDist.x, normDist.y);
+    } else if (pin == 2) {
+        // Top Edge (positive Y in Cavalry)
+        return clamp((halfRes.y - coord.y) / max(2.0 * halfRes.y, 1.0), 0.0, 1.0);
+    } else if (pin == 3) {
+        // Bottom Edge (negative Y in Cavalry)
+        return clamp((coord.y + halfRes.y) / max(2.0 * halfRes.y, 1.0), 0.0, 1.0);
+    } else if (pin == 4) {
+        // Left Edge (negative X in Cavalry)
+        return clamp((coord.x + halfRes.x) / max(2.0 * halfRes.x, 1.0), 0.0, 1.0);
+    } else if (pin == 5) {
+        // Right Edge (positive X in Cavalry)
+        return clamp((halfRes.x - coord.x) / max(2.0 * halfRes.x, 1.0), 0.0, 1.0);
+    }
+    return 1.0;
+}
+
+half4 main(float2 fragCoord) {
+    if (abs(WaveHeight) <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+
+    float rad = Direction * 0.017453292519943295;
+    float2 uProp = float2(cos(rad), sin(rad));
+    float2 vTrans = float2(-sin(rad), cos(rad));
+
+    float s = dot(fragCoord, uProp);
+    float k = 6.283185307179586 / max(WaveWidth, 1.0);
+    float phi = s * k + Phase * 0.017453292519943295;
+
+    int wType = int(floor(WaveType + 0.5));
+    float waveVal = evaluateWaveform(phi, wType);
+
+    int pin = int(floor(Pinning + 0.5));
+    float pinFactor = computePinFactor(fragCoord, halfRes, pin);
+
+    float2 displacement = vTrans * (WaveHeight * waveVal * pinFactor);
+    float2 sampleCoord = fragCoord - displacement;
+
+    return layer.eval(sampleCoord);
+}

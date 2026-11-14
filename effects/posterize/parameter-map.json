@@ -1,0 +1,20 @@
+{
+  "effectSlug": "posterize",
+  "aeName": "Posterize",
+  "aeMatchName": "ADBE Posterize",
+  "aeCategory": "Stylize",
+  "provenanceNote": "Reconstructs Adobe After Effects Posterize (ADBE Posterize) with discrete tonal step quantization across RGB color channels.",
+  "parameters": [
+    {
+      "id": "Levels",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Levels",
+      "default": 4.0,
+      "min": 2.0,
+      "max": 255.0,
+      "unit": "levels",
+      "description": "Number of color levels per channel."
+    }
+  ]
+}

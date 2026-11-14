@@ -1,0 +1,149 @@
+{
+  "effectSlug": "curves",
+  "aeName": "Curves",
+  "aeMatchName": "ADBE CurvesCustom",
+  "aeCategory": "Color Correction",
+  "provenanceNote": "Reconstructs Adobe After Effects Curves (ADBE CurvesCustom) using C1-continuous Catmull-Rom cubic spline interpolation across Master and RGB channels with unpremultiplied alpha preservation.",
+  "parameters": [
+    {
+      "id": "MasterBlack",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Master Black Point",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Output level corresponding to black input (Lift)."
+    },
+    {
+      "id": "MasterShadows",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Master Shadows",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Output level for 25% shadow tone input."
+    },
+    {
+      "id": "MasterMidtones",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Master Midtones",
+      "default": 0.50,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Output level for 50% midtone input."
+    },
+    {
+      "id": "MasterHighlights",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Master Highlights",
+      "default": 0.75,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Output level for 75% highlight tone input."
+    },
+    {
+      "id": "MasterWhite",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Master White Point",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Output level corresponding to white input (Gain)."
+    },
+    {
+      "id": "RedLift",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Red Lift",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Red channel shadow/black point offset."
+    },
+    {
+      "id": "RedMid",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Red Midtones",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Red channel midtone offset."
+    },
+    {
+      "id": "RedGain",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Red Gain",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Red channel highlight/white point offset."
+    },
+    {
+      "id": "GreenLift",
+      "slot": "inputs.8",
+      "type": "double",
+      "aeName": "Green Lift",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Green channel shadow/black point offset."
+    },
+    {
+      "id": "GreenMid",
+      "slot": "inputs.9",
+      "type": "double",
+      "aeName": "Green Midtones",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Green channel midtone offset."
+    },
+    {
+      "id": "GreenGain",
+      "slot": "inputs.10",
+      "type": "double",
+      "aeName": "Green Gain",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Green channel highlight/white point offset."
+    },
+    {
+      "id": "BlueLift",
+      "slot": "inputs.11",
+      "type": "double",
+      "aeName": "Blue Lift",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Blue channel shadow/black point offset."
+    },
+    {
+      "id": "BlueMid",
+      "slot": "inputs.12",
+      "type": "double",
+      "aeName": "Blue Midtones",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Blue channel midtone offset."
+    },
+    {
+      "id": "BlueGain",
+      "slot": "inputs.13",
+      "type": "double",
+      "aeName": "Blue Gain",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Blue channel highlight/white point offset."
+    }
+  ]
+}

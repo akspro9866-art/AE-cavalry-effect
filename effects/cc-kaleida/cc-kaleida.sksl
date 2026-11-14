@@ -1,0 +1,56 @@
+// Adobe After Effects "CC Kaleida" (CC Kaleida)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform float CenterX;      // Center X offset in pixels (default: 0.0)
+uniform float CenterY;      // Center Y offset in pixels (default: 0.0)
+uniform float Size;         // Scale factor percentage (default: 100.0, range: 1.0 to 500.0)
+uniform float Rotation;     // Rotation angle in degrees (default: 0.0, range: -360.0 to 360.0)
+uniform float SegmentCount; // Number of radial symmetry segments (default: 6.0, range: 2.0 to 36.0)
+uniform float Mirroring;    // 0 = Off, 1 = On (Alternating radial reflection)
+
+const float PI = 3.141592653589793;
+const float TWO_PI = 6.283185307179586;
+
+half4 main(float2 fragCoord) {
+    float2 center = float2(CenterX, CenterY);
+    float2 p = fragCoord - center;
+
+    float r = length(p);
+    if (r <= 0.001) {
+        return layer.eval(center);
+    }
+
+    float scale = max(Size * 0.01, 0.001);
+    r = r / scale;
+
+    float theta = atan(-p.y, p.x); // Inverted Y for Cavalry SkSL coordinate space
+    theta = mod(theta - (Rotation * 0.017453292519943295), TWO_PI);
+    if (theta < 0.0) theta += TWO_PI;
+
+    float nSeg = max(floor(SegmentCount + 0.5), 2.0);
+    float alpha = TWO_PI / nSeg;
+
+    float u = theta / alpha;
+    float segIdx = floor(u);
+    float t = fract(u);
+
+    if (Mirroring > 0.5) {
+        // Continuous bilateral reflection inside wedge
+        t = abs(2.0 * t - 1.0);
+    }
+
+    float mappedTheta = t * alpha * 0.5;
+
+    float2 mappedCoord;
+    mappedCoord.x = center.x + r * cos(mappedTheta) * scale;
+    mappedCoord.y = center.y - r * sin(mappedTheta) * scale;
+
+    return layer.eval(mappedCoord);
+}

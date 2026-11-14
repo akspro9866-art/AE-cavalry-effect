@@ -1,0 +1,95 @@
+{
+  "effectSlug": "wave-warp",
+  "aeName": "Wave Warp",
+  "aeMatchName": "ADBE Wave Warp",
+  "aeCategory": "Distort",
+  "provenanceNote": "Reconstructs Adobe After Effects Wave Warp (ADBE Wave Warp) using procedural waveform coordinate displacement with multi-edge pinning and directional propagation.",
+  "parameters": [
+    {
+      "id": "WaveType",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Wave Type",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Sine" },
+        { "value": 1, "label": "Square" },
+        { "value": 2, "label": "Triangle" },
+        { "value": 3, "label": "Sawtooth" },
+        { "value": 4, "label": "Circles" },
+        { "value": 5, "label": "Semicircles" }
+      ],
+      "description": "Mathematical waveform shape for coordinate displacement."
+    },
+    {
+      "id": "WaveHeight",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Wave Height",
+      "default": 10.0,
+      "min": -100.0,
+      "max": 100.0,
+      "unit": "pixels",
+      "description": "Amplitude of wave displacement in pixels."
+    },
+    {
+      "id": "WaveWidth",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Wave Width",
+      "default": 40.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Spatial wavelength of the periodic wave in pixels."
+    },
+    {
+      "id": "Direction",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Direction",
+      "default": 90.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Angle of wave propagation (90 = Horizontal displacement along vertical axis)."
+    },
+    {
+      "id": "WaveSpeed",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Wave Speed",
+      "default": 1.0,
+      "min": -10.0,
+      "max": 10.0,
+      "description": "Animation cycle speed multiplier."
+    },
+    {
+      "id": "Phase",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Phase",
+      "default": 0.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Phase offset of the waveform in degrees."
+    },
+    {
+      "id": "Pinning",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Pinning",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "None" },
+        { "value": 1, "label": "All Edges" },
+        { "value": 2, "label": "Top Edge" },
+        { "value": 3, "label": "Bottom Edge" },
+        { "value": 4, "label": "Left Edge" },
+        { "value": 5, "label": "Right Edge" }
+      ],
+      "description": "Boundary constraints to lock wave displacement at specific edges."
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+// Adobe After Effects "Curves" (ADBE CurvesCustom)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.13`):
+uniform float MasterBlack;      // 0.0 point (Lift) (default: 0.0, range: 0.0 to 1.0)
+uniform float MasterShadows;    // 0.25 point (default: 0.25, range: 0.0 to 1.0)
+uniform float MasterMidtones;   // 0.50 point (default: 0.50, range: 0.0 to 1.0)
+uniform float MasterHighlights; // 0.75 point (default: 0.75, range: 0.0 to 1.0)
+uniform float MasterWhite;      // 1.0 point (Gain) (default: 1.0, range: 0.0 to 1.0)
+
+uniform float RedLift;   // Red channel black offset (default: 0.0, range: -1.0 to 1.0)
+uniform float RedMid;    // Red channel midtone offset (default: 0.0, range: -1.0 to 1.0)
+uniform float RedGain;   // Red channel white offset (default: 0.0, range: -1.0 to 1.0)
+
+uniform float GreenLift; // Green channel black offset (default: 0.0, range: -1.0 to 1.0)
+uniform float GreenMid;  // Green channel midtone offset (default: 0.0, range: -1.0 to 1.0)
+uniform float GreenGain; // Green channel white offset (default: 0.0, range: -1.0 to 1.0)
+
+uniform float BlueLift;  // Blue channel black offset (default: 0.0, range: -1.0 to 1.0)
+uniform float BlueMid;   // Blue channel midtone offset (default: 0.0, range: -1.0 to 1.0)
+uniform float BlueGain;  // Blue channel white offset (default: 0.0, range: -1.0 to 1.0)
+
+float evalCatmullRom(float x, float y0, float y1, float y2, float y3, float y4) {
+    float xc = clamp(x, 0.0, 1.0);
+    float segment = floor(xc * 4.0);
+    segment = min(segment, 3.0);
+    float t = (xc - segment * 0.25) * 4.0;
+
+    float p0, p1, p2, p3;
+    if (segment < 0.5) {
+        p1 = y0; p2 = y1;
+        p0 = y0 - (y1 - y0);
+        p3 = y2;
+    } else if (segment < 1.5) {
+        p0 = y0; p1 = y1; p2 = y2; p3 = y3;
+    } else if (segment < 2.5) {
+        p0 = y1; p1 = y2; p2 = y3; p3 = y4;
+    } else {
+        p0 = y2; p1 = y3; p2 = y4;
+        p3 = y4 + (y4 - y3);
+    }
+
+    float t2 = t * t;
+    float t3 = t2 * t;
+    float val = 0.5 * ((2.0 * p1) +
+                      (-p0 + p2) * t +
+                      (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 +
+                      (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3);
+    return clamp(val, 0.0, 1.0);
+}
+
+float evalChannelCurve(float c, float lift, float mid, float gain) {
+    float y0 = clamp(lift, 0.0, 1.0);
+    float y1 = clamp(0.25 + (lift * 0.75 + mid * 0.25), 0.0, 1.0);
+    float y2 = clamp(0.50 + mid, 0.0, 1.0);
+    float y3 = clamp(0.75 + (gain * 0.75 + mid * 0.25), 0.0, 1.0);
+    float y4 = clamp(1.0 + gain, 0.0, 1.0);
+    return evalCatmullRom(c, y0, y1, y2, y3, y4);
+}
+
+half4 main(float2 fragCoord) {
+    half4 col = layer.eval(fragCoord);
+    if (col.a <= 0.0001) {
+        return col;
+    }
+
+    // Unpremultiply alpha for true color grading
+    float3 rgb = float3(col.rgb) / float(col.a);
+
+    // 1. Master RGB Spline Curve
+    rgb.r = evalCatmullRom(rgb.r, MasterBlack, MasterShadows, MasterMidtones, MasterHighlights, MasterWhite);
+    rgb.g = evalCatmullRom(rgb.g, MasterBlack, MasterShadows, MasterMidtones, MasterHighlights, MasterWhite);
+    rgb.b = evalCatmullRom(rgb.b, MasterBlack, MasterShadows, MasterMidtones, MasterHighlights, MasterWhite);
+
+    // 2. Individual Channel Curves
+    rgb.r = evalChannelCurve(rgb.r, RedLift, RedMid, RedGain);
+    rgb.g = evalChannelCurve(rgb.g, GreenLift, GreenMid, GreenGain);
+    rgb.b = evalChannelCurve(rgb.b, BlueLift, BlueMid, BlueGain);
+
+    // Re-premultiply alpha
+    return half4(half3(rgb * float(col.a)), col.a);
+}

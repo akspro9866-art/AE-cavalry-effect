@@ -1,0 +1,53 @@
+// Adobe After Effects "Levels" (ADBE Set Levels)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform float InputBlack;    // Input Black point (default: 0.0, range: 0.0 - 255.0)
+uniform float InputWhite;    // Input White point (default: 255.0, range: 0.0 - 255.0)
+uniform float Gamma;         // Midtone Gamma exponent (default: 1.0, range: 0.1 - 10.0)
+uniform float OutputBlack;   // Output Black floor (default: 0.0, range: 0.0 - 255.0)
+uniform float OutputWhite;   // Output White ceiling (default: 255.0, range: 0.0 - 255.0)
+uniform float Channel;       // 0 = RGB, 1 = Red, 2 = Green, 3 = Blue
+
+float remapLevel(float c, float inB, float inW, float gamma, float outB, float outW) {
+    float inNormB = inB / 255.0;
+    float inNormW = inW / 255.0;
+    float outNormB = outB / 255.0;
+    float outNormW = outW / 255.0;
+    float span = max(inNormW - inNormB, 1e-5);
+    float t = clamp((c - inNormB) / span, 0.0, 1.0);
+    float g = max(gamma, 0.01);
+    float powered = pow(t, 1.0 / g);
+    return clamp(outNormB + powered * (outNormW - outNormB), 0.0, 1.0);
+}
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+    if (src.a <= 0.0001) {
+        return src;
+    }
+
+    float alpha = float(src.a);
+    float3 rgb = float3(src.rgb) / max(alpha, 1e-4);
+    int ch = int(floor(Channel + 0.5));
+
+    if (ch == 1) {
+        rgb.r = remapLevel(rgb.r, InputBlack, InputWhite, Gamma, OutputBlack, OutputWhite);
+    } else if (ch == 2) {
+        rgb.g = remapLevel(rgb.g, InputBlack, InputWhite, Gamma, OutputBlack, OutputWhite);
+    } else if (ch == 3) {
+        rgb.b = remapLevel(rgb.b, InputBlack, InputWhite, Gamma, OutputBlack, OutputWhite);
+    } else {
+        rgb.r = remapLevel(rgb.r, InputBlack, InputWhite, Gamma, OutputBlack, OutputWhite);
+        rgb.g = remapLevel(rgb.g, InputBlack, InputWhite, Gamma, OutputBlack, OutputWhite);
+        rgb.b = remapLevel(rgb.b, InputBlack, InputWhite, Gamma, OutputBlack, OutputWhite);
+    }
+
+    return half4(half3(rgb * alpha), src.a);
+}

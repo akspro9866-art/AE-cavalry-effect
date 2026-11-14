@@ -1,0 +1,71 @@
+{
+  "effectSlug": "cc-kaleida",
+  "aeName": "CC Kaleida",
+  "aeMatchName": "CC Kaleida",
+  "aeCategory": "Stylize",
+  "provenanceNote": "Reconstructs Adobe After Effects CC Kaleida using polar coordinate decomposition, radial wedge segment division, and C0/C1-continuous bilateral reflection.",
+  "parameters": [
+    {
+      "id": "CenterX",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Center X",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Horizontal coordinate of the kaleidoscope origin."
+    },
+    {
+      "id": "CenterY",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Center Y",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Vertical coordinate of the kaleidoscope origin."
+    },
+    {
+      "id": "Size",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Size",
+      "default": 100.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "percent",
+      "description": "Radial scaling factor of the kaleidoscope sample wedge."
+    },
+    {
+      "id": "Rotation",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Rotation",
+      "default": 0.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Global angular rotation of the symmetry segments."
+    },
+    {
+      "id": "SegmentCount",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Segments",
+      "default": 6.0,
+      "min": 2.0,
+      "max": 36.0,
+      "description": "Number of repeating angular sectors in a 360-degree rotation."
+    },
+    {
+      "id": "Mirroring",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Mirroring",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Enables bilateral reflection inside each segment to ensure seamless boundary matching."
+    }
+  ]
+}

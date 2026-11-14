@@ -88,7 +88,7 @@ Effects in this library use one of three distinct architectural strategies:
 - **Node**: `skslFilter`
 - **Port**: Attached to the target layer's `filters` port via `api.connect(filterId, 'id', targetLayerId, 'filters')`.
 - **Dynamic Slots**: Exposes editable parameters in the Cavalry Attribute Editor by provisioning dynamic attributes on the filter node (`api.addDynamicAttribute(filterId, ...)`) matching the uniform variables declared in the SkSL source code.
-- **Effects**: Gaussian Blur, Fractal Noise, Tint, CC Ball Action, CC RepeTile, Deep Glow, Turbulent Displace.
+- **Effects**: All 32 raster filters including Gaussian Blur, Directional Blur, Fast Box Blur, Radial Blur, Sharpen, Levels, Curves, Exposure, Hue/Saturation, Color Balance, Tint, Posterize, Wave Warp, Turbulent Displace, CC RepeTile, Motion Tile, Displacement Map, CC Kaleida, Optics Compensation, Venetian Blinds, CC Light Sweep, Gradient Ramp, Glow, Deep Glow, Drop Shadow, Bevel Alpha, Mosaic, Find Edges, CC Ball Action, Fractal Noise, Echo, Time Displacement.
 
 ### B. JavaScript Deformers (`js-deformer`)
 - **Node**: `javascriptDeformer`

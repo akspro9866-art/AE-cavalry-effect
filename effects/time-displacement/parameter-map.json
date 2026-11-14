@@ -1,0 +1,57 @@
+{
+  "effectSlug": "time-displacement",
+  "aeName": "Time Displacement",
+  "aeMatchName": "ADBE Time Displacement",
+  "aeCategory": "Time",
+  "provenanceNote": "Reconstructs Adobe After Effects Time Displacement (ADBE Time Displacement) using channel luminance mapping, temporal quantizing steps, and phase propagation projection with secondary layer graph linking.",
+  "parameters": [
+    {
+      "id": "MaxDisplacementTime",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Max Displacement Time (sec)",
+      "default": 1.0,
+      "min": -10.0,
+      "max": 10.0,
+      "unit": "seconds",
+      "description": "Maximum temporal time offset corresponding to extreme channel luminance."
+    },
+    {
+      "id": "TimeResolution",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Time Resolution (fps)",
+      "default": 30.0,
+      "min": 1.0,
+      "max": 120.0,
+      "unit": "fps",
+      "description": "Quantization resolution of the time offset step."
+    },
+    {
+      "id": "DisplacementChannel",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Displacement Channel",
+      "default": 4.0,
+      "options": [
+        { "value": 0, "label": "Red" },
+        { "value": 1, "label": "Green" },
+        { "value": 2, "label": "Blue" },
+        { "value": 3, "label": "Alpha" },
+        { "value": 4, "label": "Luminance" }
+      ],
+      "description": "Color channel used to drive temporal remapping."
+    },
+    {
+      "id": "SpatialLagFactor",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Spatial Lag Factor",
+      "default": 20.0,
+      "min": 0.0,
+      "max": 200.0,
+      "unit": "pixels/sec",
+      "description": "Spatial projection scale for temporal latency in single-pass SkSL."
+    }
+  ]
+}

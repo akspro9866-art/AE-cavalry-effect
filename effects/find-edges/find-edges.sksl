@@ -1,0 +1,53 @@
+// Adobe After Effects "Find Edges" (ADBE Find Edges)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.1`):
+uniform float Invert;             // 0 = Dark lines on White, 1 = Bright lines on Black (default: 0.0)
+uniform float BlendWithOriginal;  // Blend percentage (default: 0.0, range: 0.0 to 100.0)
+
+half4 main(float2 fragCoord) {
+    half4 orig = layer.eval(fragCoord);
+    if (orig.a <= 0.0001) {
+        return half4(0.0);
+    }
+
+    // Sample 3x3 neighborhood
+    half4 c00 = layer.eval(fragCoord + float2(-1.0, -1.0));
+    half4 c10 = layer.eval(fragCoord + float2( 0.0, -1.0));
+    half4 c20 = layer.eval(fragCoord + float2( 1.0, -1.0));
+
+    half4 c01 = layer.eval(fragCoord + float2(-1.0,  0.0));
+    half4 c21 = layer.eval(fragCoord + float2( 1.0,  0.0));
+
+    half4 c02 = layer.eval(fragCoord + float2(-1.0,  1.0));
+    half4 c12 = layer.eval(fragCoord + float2( 0.0,  1.0));
+    half4 c22 = layer.eval(fragCoord + float2( 1.0,  1.0));
+
+    // Sobel 3x3 spatial gradient kernels
+    half3 gx = (c20.rgb + 2.0 * c21.rgb + c22.rgb) - (c00.rgb + 2.0 * c01.rgb + c02.rgb);
+    half3 gy = (c02.rgb + 2.0 * c12.rgb + c22.rgb) - (c00.rgb + 2.0 * c10.rgb + c20.rgb);
+
+    half3 mag = sqrt(gx * gx + gy * gy);
+    mag = clamp(mag * 0.7, half3(0.0), half3(1.0));
+
+    half3 edgeCol;
+    if (Invert > 0.5) {
+        // Invert: Bright lines on black
+        edgeCol = mag;
+    } else {
+        // Standard: Dark lines on white
+        edgeCol = half3(1.0) - mag;
+    }
+
+    // Modulate by original alpha to preserve silhouette
+    half4 result = half4(edgeCol * orig.a, orig.a);
+
+    float blendFactor = clamp(BlendWithOriginal * 0.01, 0.0, 1.0);
+    return mix(result, orig, half(blendFactor));
+}

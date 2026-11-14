@@ -1,0 +1,68 @@
+{
+  "effectSlug": "echo",
+  "aeName": "Echo",
+  "aeMatchName": "ADBE Echo",
+  "aeCategory": "Time",
+  "provenanceNote": "Reconstructs Adobe After Effects Echo (ADBE Echo) using temporal duplicate scene-graph hierarchies with time offsetting and multi-stage blending operators (Add, Screen, Maximum, Minimum, Composite).",
+  "parameters": [
+    {
+      "id": "EchoTime",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Echo Time (seconds)",
+      "default": -0.033,
+      "min": -2.0,
+      "max": 2.0,
+      "unit": "seconds",
+      "description": "Temporal offset between consecutive echo instances."
+    },
+    {
+      "id": "NumberOfEchoes",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Number of Echoes",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 16.0,
+      "description": "Total number of temporal echo copies to composite."
+    },
+    {
+      "id": "StartingIntensity",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Starting Intensity",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "multiplier",
+      "description": "Initial opacity/intensity weighting of the primary echo."
+    },
+    {
+      "id": "Decay",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Decay",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "multiplier",
+      "description": "Multiplicative intensity reduction applied per subsequent echo step."
+    },
+    {
+      "id": "EchoOperator",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Echo Operator",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Add" },
+        { "value": 1, "label": "Maximum" },
+        { "value": 2, "label": "Minimum" },
+        { "value": 3, "label": "Screen" },
+        { "value": 4, "label": "Composite (Over)" },
+        { "value": 5, "label": "Behind" }
+      ],
+      "description": "Blending operator used to composite successive echo frames."
+    }
+  ]
+}

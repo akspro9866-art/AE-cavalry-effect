@@ -1,0 +1,66 @@
+// Adobe After Effects "Color Balance" (ADBE Color Balance2)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.9`):
+uniform float ShadowRed;          // Range: -100.0 to 100.0 (default: 0.0)
+uniform float ShadowGreen;        // Range: -100.0 to 100.0 (default: 0.0)
+uniform float ShadowBlue;         // Range: -100.0 to 100.0 (default: 0.0)
+
+uniform float MidtoneRed;         // Range: -100.0 to 100.0 (default: 0.0)
+uniform float MidtoneGreen;       // Range: -100.0 to 100.0 (default: 0.0)
+uniform float MidtoneBlue;        // Range: -100.0 to 100.0 (default: 0.0)
+
+uniform float HighlightRed;       // Range: -100.0 to 100.0 (default: 0.0)
+uniform float HighlightGreen;     // Range: -100.0 to 100.0 (default: 0.0)
+uniform float HighlightBlue;      // Range: -100.0 to 100.0 (default: 0.0)
+
+uniform float PreserveLuminosity; // 0 = Off, 1 = On (default: 1.0)
+
+float calcLuminance(float3 c) {
+    return dot(c, float3(0.299, 0.587, 0.114));
+}
+
+half4 main(float2 fragCoord) {
+    half4 col = layer.eval(fragCoord);
+    if (col.a <= 0.0001) {
+        return col;
+    }
+
+    float3 rgb = float3(col.rgb) / float(col.a);
+    float yIn = calcLuminance(rgb);
+
+    // Smooth luminance-based tonal weights
+    float ws = clamp(1.0 - 2.0 * yIn, 0.0, 1.0);
+    ws = ws * ws;
+
+    float wm = clamp(1.0 - abs(2.0 * yIn - 1.0), 0.0, 1.0);
+    wm = wm * wm;
+
+    float wh = clamp(2.0 * yIn - 1.0, 0.0, 1.0);
+    wh = wh * wh;
+
+    float sumW = max(ws + wm + wh, 1e-4);
+    ws /= sumW;
+    wm /= sumW;
+    wh /= sumW;
+
+    float3 deltaShadow = float3(ShadowRed, ShadowGreen, ShadowBlue) * 0.01;
+    float3 deltaMidtone = float3(MidtoneRed, MidtoneGreen, MidtoneBlue) * 0.01;
+    float3 deltaHighlight = float3(HighlightRed, HighlightGreen, HighlightBlue) * 0.01;
+
+    float3 delta = ws * deltaShadow + wm * deltaMidtone + wh * deltaHighlight;
+    float3 adjusted = clamp(rgb + delta, 0.0, 1.0);
+
+    if (PreserveLuminosity > 0.5) {
+        float yOut = calcLuminance(adjusted);
+        adjusted = clamp(adjusted + (yIn - yOut), 0.0, 1.0);
+    }
+
+    return half4(half3(adjusted * float(col.a)), col.a);
+}

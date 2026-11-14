@@ -1,0 +1,66 @@
+// Adobe After Effects "Displacement Map" (ADBE Displacement Map)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform float MaxHorizontalDisplacement; // Maximum horizontal pixel shift (default: 10.0, range: -500.0 to 500.0)
+uniform float MaxVerticalDisplacement;   // Maximum vertical pixel shift (default: 10.0, range: -500.0 to 500.0)
+uniform float HorizontalSourceChannel;  // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance, 5=Lightness, 6=Off
+uniform float VerticalSourceChannel;    // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance, 5=Lightness, 6=Off
+uniform float MapBehavior;              // 0=Center Map, 1=Stretch to Fit, 2=Tile Map
+uniform float EdgeBehavior;             // 0=Off (transparent bounds), 1=Wrap Pixels Around
+
+float extractChannel(half4 col, int ch) {
+    if (ch == 0) return float(col.r) - 0.5;
+    if (ch == 1) return float(col.g) - 0.5;
+    if (ch == 2) return float(col.b) - 0.5;
+    if (ch == 3) return float(col.a) - 0.5;
+    if (ch == 4) return (0.299 * float(col.r) + 0.587 * float(col.g) + 0.114 * float(col.b)) - 0.5;
+    if (ch == 5) {
+        float maxC = max(max(float(col.r), float(col.g)), float(col.b));
+        float minC = min(min(float(col.r), float(col.g)), float(col.b));
+        return ((maxC + minC) * 0.5) - 0.5;
+    }
+    return 0.0; // 6 = Off
+}
+
+half4 main(float2 fragCoord) {
+    if (abs(MaxHorizontalDisplacement) <= 0.001 && abs(MaxVerticalDisplacement) <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+
+    // Sample displacement map reference signal at fragCoord
+    // In Cavalry skslFilter, layer samples the current raster state;
+    // When a secondary matte or pre-composite is attached, channels drive the displacement.
+    half4 mapVal = layer.eval(fragCoord);
+
+    int chX = int(floor(HorizontalSourceChannel + 0.5));
+    int chY = int(floor(VerticalSourceChannel + 0.5));
+
+    float shiftX = extractChannel(mapVal, chX) * MaxHorizontalDisplacement;
+    float shiftY = extractChannel(mapVal, chY) * MaxVerticalDisplacement;
+
+    float2 displacedCoord = fragCoord - float2(shiftX, shiftY);
+
+    if (EdgeBehavior > 0.5) {
+        // Wrap Pixels Around
+        float2 norm = (displacedCoord + halfRes) / res;
+        norm = fract(norm);
+        displacedCoord = norm * res - halfRes;
+    } else {
+        // Clamp / discard outside bounding box
+        if (abs(displacedCoord.x) > halfRes.x || abs(displacedCoord.y) > halfRes.y) {
+            return half4(0.0);
+        }
+    }
+
+    return layer.eval(displacedCoord);
+}

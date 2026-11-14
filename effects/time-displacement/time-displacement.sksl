@@ -1,0 +1,55 @@
+// Adobe After Effects "Time Displacement" (ADBE Time Displacement)
+// Reconstructed mathematically for Cavalry 2.8+ as a procedural GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.3`):
+uniform float MaxDisplacementTime; // Maximum time shift in seconds (default: 1.0, range: -10.0 to 10.0)
+uniform float TimeResolution;      // Temporal sample discretization (default: 30.0, range: 1.0 to 120.0)
+uniform float DisplacementChannel; // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance (default: 4.0)
+uniform float SpatialLagFactor;    // Spatial displacement multiplier per second of lag (default: 20.0)
+
+float extractChannel(half4 col, int ch) {
+    if (ch == 0) return float(col.r);
+    if (ch == 1) return float(col.g);
+    if (ch == 2) return float(col.b);
+    if (ch == 3) return float(col.a);
+    // 4 = Luminance
+    return 0.299 * float(col.r) + 0.587 * float(col.g) + 0.114 * float(col.b);
+}
+
+half4 main(float2 fragCoord) {
+    if (abs(MaxDisplacementTime) <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+
+    // Sample displacement signal
+    half4 mapCol = layer.eval(fragCoord);
+    int ch = int(floor(DisplacementChannel + 0.5));
+    float normVal = extractChannel(mapCol, ch);
+
+    // Continuous time delta centered at 0.5
+    float dt = (normVal - 0.5) * MaxDisplacementTime;
+
+    // Discretize time shift by TimeResolution
+    float resStep = max(TimeResolution, 1.0);
+    dt = floor(dt * resStep + 0.5) / resStep;
+
+    // In Cavalry single-pass SkSL without temporal texture volume,
+    // temporal lag is projected onto spatial phase propagation (slit-scan / wave lag)
+    float2 lagDisplacement = float2(0.0, dt * SpatialLagFactor);
+    float2 sampleCoord = fragCoord - lagDisplacement;
+
+    if (abs(sampleCoord.x) > halfRes.x || abs(sampleCoord.y) > halfRes.y) {
+        return half4(0.0);
+    }
+
+    return layer.eval(sampleCoord);
+}

@@ -1,0 +1,56 @@
+{
+  "effectSlug": "fast-box-blur",
+  "aeName": "Fast Box Blur",
+  "aeMatchName": "ADBE Box Blur2",
+  "aeCategory": "Blur & Sharpen",
+  "provenanceNote": "Reconstructs Adobe After Effects Fast Box Blur (ADBE Box Blur2) with configurable box pass iterations (Box, Triangle, Cubic B-Spline), directional filtering, and edge clamping.",
+  "parameters": [
+    {
+      "id": "BlurRadius",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Blur Radius",
+      "default": 10.0,
+      "min": 0.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Spatial radius of the box kernel."
+    },
+    {
+      "id": "Iterations",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Iterations",
+      "default": 1.0,
+      "min": 1.0,
+      "max": 5.0,
+      "unit": "passes",
+      "description": "Number of box filter convolutions: 1=Box, 2=Triangle, 3=B-Spline."
+    },
+    {
+      "id": "BlurDimensions",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Blur Dimensions",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Horizontal and Vertical" },
+        { "value": 1, "label": "Horizontal" },
+        { "value": 2, "label": "Vertical" }
+      ],
+      "description": "Directional axes along which blur is computed."
+    },
+    {
+      "id": "RepeatEdgePixels",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Repeat Edge Pixels",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "On" }
+      ],
+      "description": "Clamps texture sampling at bounds to prevent transparent edge vignetting."
+    }
+  ]
+}

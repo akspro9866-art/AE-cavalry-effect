@@ -1,0 +1,72 @@
+// Adobe After Effects "Radial Blur" (ADBE Radial Blur)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.4`):
+uniform float Amount;      // Blur intensity (default: 10.0, range: 0.0 to 100.0)
+uniform float BlurType;    // 0 = Spin, 1 = Zoom
+uniform float Quality;     // 0 = Draft, 1 = Standard, 2 = Best
+uniform float CenterX;     // Center X position in pixels (default: 0.0)
+uniform float CenterY;     // Center Y position in pixels (default: 0.0)
+
+half4 main(float2 fragCoord) {
+    if (Amount <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 center = float2(CenterX, CenterY);
+    float2 rVec = fragCoord - center;
+    float dist = length(rVec);
+
+    if (dist <= 1e-4) {
+        return layer.eval(fragCoord);
+    }
+
+    int bType = int(floor(BlurType + 0.5));
+    half4 accum = layer.eval(fragCoord);
+    float totalW = 1.0;
+
+    if (bType == 0) {
+        // Spin Mode: angular displacement along circular orbit around Center
+        // Max angle: 45 degrees at Amount = 100
+        float maxAngle = (Amount / 100.0) * 0.7853981633974483; // 45 deg in rad
+
+        for (int i = 1; i <= 16; i++) {
+            float fi = float(i);
+            float a = (fi / 16.0) * maxAngle;
+            float cosA = cos(a);
+            float sinA = sin(a);
+            float w = 1.0 - (fi / 17.0);
+
+            // Clockwise sample
+            float2 cwOffset = float2(rVec.x * cosA - rVec.y * sinA, rVec.x * sinA + rVec.y * cosA);
+            // Counter-clockwise sample
+            float2 ccwOffset = float2(rVec.x * cosA + rVec.y * sinA, -rVec.x * sinA + rVec.y * cosA);
+
+            accum += (layer.eval(center + cwOffset) + layer.eval(center + ccwOffset)) * half(w);
+            totalW += 2.0 * w;
+        }
+    } else {
+        // Zoom Mode: radial expansion / contraction toward or away from Center
+        float maxScale = (Amount / 100.0) * 0.5;
+
+        for (int i = 1; i <= 16; i++) {
+            float fi = float(i);
+            float s = (fi / 16.0) * maxScale;
+            float w = 1.0 - (fi / 17.0);
+
+            float2 sZoomIn = center + rVec * (1.0 - s);
+            float2 sZoomOut = center + rVec * (1.0 + s);
+
+            accum += (layer.eval(sZoomIn) + layer.eval(sZoomOut)) * half(w);
+            totalW += 2.0 * w;
+        }
+    }
+
+    return accum / half(totalW);
+}

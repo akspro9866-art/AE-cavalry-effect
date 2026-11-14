@@ -1,0 +1,45 @@
+// Adobe After Effects "Mosaic" (ADBE Mosaic)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.2`):
+uniform float HorizontalBlocks; // Number of mosaic blocks across width (default: 10.0, range: 1.0 to 500.0)
+uniform float VerticalBlocks;   // Number of mosaic blocks down height (default: 10.0, range: 1.0 to 500.0)
+uniform float SharpColors;      // 0 = Smooth, 1 = Sharp quantized color steps (default: 0.0)
+
+half4 main(float2 fragCoord) {
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+
+    float hb = max(floor(HorizontalBlocks + 0.5), 1.0);
+    float vb = max(floor(VerticalBlocks + 0.5), 1.0);
+    float2 blocks = float2(hb, vb);
+
+    // Convert centered coordinates [-halfRes, halfRes] to normalized UV [0.0, 1.0]
+    float2 uv = (fragCoord + halfRes) / res;
+    uv = clamp(uv, 0.0, 1.0);
+
+    // Quantize into cell centers
+    float2 cell = floor(uv * blocks);
+    float2 cellUv = (cell + 0.5) / blocks;
+
+    // Convert back to centered coordinates
+    float2 sampleCoord = cellUv * res - halfRes;
+
+    half4 col = layer.eval(sampleCoord);
+
+    if (SharpColors > 0.5 && col.a > 0.0001) {
+        float a = float(col.a);
+        float3 unmult = float3(col.rgb) / a;
+        // Quantize color steps to prevent intermediate bilinear blur
+        unmult = floor(unmult * 16.0 + 0.5) / 16.0;
+        col = half4(half3(unmult * a), col.a);
+    }
+
+    return col;
+}

@@ -1,0 +1,94 @@
+{
+  "effectSlug": "motion-tile",
+  "aeName": "Motion Tile",
+  "aeMatchName": "ADBE Tile",
+  "aeCategory": "Stylize",
+  "provenanceNote": "Reconstructs Adobe After Effects Motion Tile (ADBE Tile) using 2D coordinate wrapping, row phase offsets, and alternating edge mirroring.",
+  "parameters": [
+    {
+      "id": "TileCenterX",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Tile Center X",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Horizontal center position of the master tile."
+    },
+    {
+      "id": "TileCenterY",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Tile Center Y",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Vertical center position of the master tile."
+    },
+    {
+      "id": "TileWidth",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Tile Width",
+      "default": 100.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "percent",
+      "description": "Width of each tile relative to layer width."
+    },
+    {
+      "id": "TileHeight",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Tile Height",
+      "default": 100.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "percent",
+      "description": "Height of each tile relative to layer height."
+    },
+    {
+      "id": "OutputWidth",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Output Width",
+      "default": 100.0,
+      "min": 10.0,
+      "max": 2000.0,
+      "unit": "percent",
+      "description": "Overall rendering boundary width relative to layer."
+    },
+    {
+      "id": "OutputHeight",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Output Height",
+      "default": 100.0,
+      "min": 10.0,
+      "max": 2000.0,
+      "unit": "percent",
+      "description": "Overall rendering boundary height relative to layer."
+    },
+    {
+      "id": "MirrorEdges",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Mirror Edges",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Repeat" },
+        { "value": 1, "label": "Mirror" }
+      ],
+      "description": "Flips adjacent tiles horizontally and vertically to create seamless continuity."
+    },
+    {
+      "id": "Phase",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Phase",
+      "default": 0.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Horizontal tile stagger per vertical row."
+    }
+  ]
+}

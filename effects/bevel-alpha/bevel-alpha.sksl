@@ -1,0 +1,52 @@
+// Adobe After Effects "Bevel Alpha" (ADBE Bevel Alpha)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.4`):
+uniform float EdgeThickness;   // Width of the beveled perimeter in pixels (default: 2.0, range: 0.0 to 50.0)
+uniform float LightAngle;      // Directional light vector angle in degrees (default: 45.0, range: 0.0 to 360.0)
+uniform float LightIntensity;  // Illumination intensity multiplier (default: 1.0, range: 0.0 to 2.0)
+uniform half4 HighlightColor;  // Color swatch of facing edge highlight (default: RGB(255, 255, 255))
+uniform half4 ShadowColor;     // Color swatch of opposing edge shadow (default: RGB(0, 0, 0))
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+    if (src.a <= 0.0001 || EdgeThickness <= 0.001) {
+        return src;
+    }
+
+    float delta = max(EdgeThickness, 0.5);
+
+    // Alpha spatial gradients
+    float aRight = float(layer.eval(fragCoord + float2(delta, 0.0)).a);
+    float aLeft  = float(layer.eval(fragCoord - float2(delta, 0.0)).a);
+    float aUp    = float(layer.eval(fragCoord + float2(0.0, delta)).a);
+    float aDown  = float(layer.eval(fragCoord - float2(0.0, delta)).a);
+
+    // Normal gradient vector (pointing uphill toward alpha interior)
+    float2 normal = float2(aLeft - aRight, aDown - aUp);
+
+    float rad = LightAngle * 0.017453292519943295;
+    float2 lightDir = float2(cos(rad), sin(rad));
+
+    float dotL = dot(normal, lightDir) * LightIntensity;
+
+    float alpha = float(src.a);
+    float3 unmult = float3(src.rgb) / max(alpha, 1e-4);
+
+    if (dotL > 0.0) {
+        float hFactor = clamp(dotL, 0.0, 1.0);
+        unmult = mix(unmult, HighlightColor.rgb, hFactor * float(HighlightColor.a));
+    } else if (dotL < 0.0) {
+        float sFactor = clamp(-dotL, 0.0, 1.0);
+        unmult = mix(unmult, ShadowColor.rgb, sFactor * float(ShadowColor.a));
+    }
+
+    unmult = clamp(unmult, 0.0, 1.0);
+    return half4(half3(unmult * alpha), src.a);
+}

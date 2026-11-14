@@ -1,0 +1,94 @@
+{
+  "effectSlug": "gradient-ramp",
+  "aeName": "Gradient Ramp",
+  "aeMatchName": "ADBE Ramp",
+  "aeCategory": "Generate",
+  "provenanceNote": "Reconstructs Adobe After Effects Gradient Ramp (ADBE Ramp) using spatial linear and radial vector projections with anti-banding high-frequency dither scatter.",
+  "parameters": [
+    {
+      "id": "StartPointX",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Start of Ramp X",
+      "default": -100.0,
+      "unit": "pixels",
+      "description": "Horizontal position of the gradient origin."
+    },
+    {
+      "id": "StartPointY",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Start of Ramp Y",
+      "default": -100.0,
+      "unit": "pixels",
+      "description": "Vertical position of the gradient origin."
+    },
+    {
+      "id": "StartColor",
+      "slot": "inputs.2",
+      "type": "color",
+      "aeName": "Start Color",
+      "default": { "r": 0, "g": 0, "b": 0, "a": 255 },
+      "description": "Color swatch at gradient origin."
+    },
+    {
+      "id": "EndPointX",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "End of Ramp X",
+      "default": 100.0,
+      "unit": "pixels",
+      "description": "Horizontal position of the gradient terminus."
+    },
+    {
+      "id": "EndPointY",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "End of Ramp Y",
+      "default": 100.0,
+      "unit": "pixels",
+      "description": "Vertical position of the gradient terminus."
+    },
+    {
+      "id": "EndColor",
+      "slot": "inputs.5",
+      "type": "color",
+      "aeName": "End Color",
+      "default": { "r": 255, "g": 255, "b": 255, "a": 255 },
+      "description": "Color swatch at gradient terminus."
+    },
+    {
+      "id": "RampShape",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Ramp Shape",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Linear Ramp" },
+        { "value": 1, "label": "Radial Ramp" }
+      ],
+      "description": "Geometry of gradient contour (Linear or Radial)."
+    },
+    {
+      "id": "RampScatter",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Ramp Scatter",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 100.0,
+      "description": "High-frequency pseudo-random dithering to prevent visible banding."
+    },
+    {
+      "id": "BlendWithOriginal",
+      "slot": "inputs.8",
+      "type": "double",
+      "aeName": "Blend With Original",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Blend transparency with underlying layer."
+    }
+  ]
+}

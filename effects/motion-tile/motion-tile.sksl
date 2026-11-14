@@ -1,0 +1,69 @@
+// Adobe After Effects "Motion Tile" (ADBE Tile)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):
+uniform float TileCenterX;   // Tile center X offset in pixels (default: 0.0)
+uniform float TileCenterY;   // Tile center Y offset in pixels (default: 0.0)
+uniform float TileWidth;     // Tile width percentage (default: 100.0, range: 1.0 to 500.0)
+uniform float TileHeight;    // Tile height percentage (default: 100.0, range: 1.0 to 500.0)
+uniform float OutputWidth;   // Output width percentage (default: 100.0, range: 10.0 to 2000.0)
+uniform float OutputHeight;  // Output height percentage (default: 100.0, range: 10.0 to 2000.0)
+uniform float MirrorEdges;   // 0 = Repeat, 1 = Mirror Edges
+uniform float Phase;         // Horizontal tile shift per vertical row (default: 0.0, range: -360.0 to 360.0)
+
+half4 main(float2 fragCoord) {
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+
+    // Check overall output bounds
+    float outScaleX = max(OutputWidth * 0.01, 0.01);
+    float outScaleY = max(OutputHeight * 0.01, 0.01);
+    float2 maxHalfRes = halfRes * float2(outScaleX, outScaleY);
+
+    if (abs(fragCoord.x) > maxHalfRes.x || abs(fragCoord.y) > maxHalfRes.y) {
+        return half4(0.0);
+    }
+
+    // Tile dimensions in pixels
+    float tScaleX = max(TileWidth * 0.01, 0.001);
+    float tScaleY = max(TileHeight * 0.01, 0.001);
+    float2 tileDim = res * float2(tScaleX, tScaleY);
+
+    // Center offset
+    float2 center = float2(TileCenterX, TileCenterY);
+    float2 p = fragCoord - center;
+
+    // Row index for phase offset
+    float row = floor(p.y / tileDim.y + 0.5);
+    float phaseOffset = (Phase / 360.0) * tileDim.x * row;
+    p.x -= phaseOffset;
+
+    // Normalized tile coordinates centered around zero
+    float ux = p.x / tileDim.x + 0.5;
+    float uy = p.y / tileDim.y + 0.5;
+
+    float tileIdxX = floor(ux);
+    float tileIdxY = floor(uy);
+
+    float fx = fract(ux);
+    float fy = fract(uy);
+
+    // Mirroring
+    if (MirrorEdges > 0.5) {
+        bool mirrorX = (abs(int(tileIdxX)) % 2) != 0;
+        bool mirrorY = (abs(int(tileIdxY)) % 2) != 0;
+        if (mirrorX) fx = 1.0 - fx;
+        if (mirrorY) fy = 1.0 - fy;
+    }
+
+    // Map back to layer pixel coordinates
+    float2 sampleCoord = (float2(fx, fy) - 0.5) * res;
+
+    return layer.eval(sampleCoord);
+}

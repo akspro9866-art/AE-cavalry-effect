@@ -1,0 +1,50 @@
+{
+  "effectSlug": "optics-compensation",
+  "aeName": "Optics Compensation",
+  "aeMatchName": "ADBE Optics Compensation",
+  "aeCategory": "Distort",
+  "provenanceNote": "Reconstructs Adobe After Effects Optics Compensation (ADBE Optics Compensation) using spherical tangent radial lens warping, singularity clipping, and reversible distortion mapping.",
+  "parameters": [
+    {
+      "id": "FieldOfView",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Field of View",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 160.0,
+      "unit": "degrees",
+      "description": "Angular field of view of the simulated camera lens."
+    },
+    {
+      "id": "ReverseLensDistortion",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Reverse Lens Distortion",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off (Pincushion / Expanding)" },
+        { "value": 1, "label": "On (Barrel / Compressing)" }
+      ],
+      "description": "Inverts the direction of radial distortion curvature."
+    },
+    {
+      "id": "ViewCenterX",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "View Center X",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Horizontal optical axis center position."
+    },
+    {
+      "id": "ViewCenterY",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "View Center Y",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Vertical optical axis center position."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+// Adobe After Effects "Optics Compensation" (ADBE Optics Compensation)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.3`):
+uniform float FieldOfView;           // Field of View angle in degrees (default: 0.0, range: 0.0 to 160.0)
+uniform float ReverseLensDistortion; // 0 = Expand / Fisheye, 1 = Contract / Barrel
+uniform float ViewCenterX;           // Optical center X in pixels (default: 0.0)
+uniform float ViewCenterY;           // Optical center Y in pixels (default: 0.0)
+
+const float PI = 3.141592653589793;
+
+half4 main(float2 fragCoord) {
+    if (FieldOfView <= 0.01) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+    float2 center = float2(ViewCenterX, ViewCenterY);
+
+    float2 p = fragCoord - center;
+    float dist = length(p);
+    if (dist <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float diag = length(halfRes);
+    float normR = dist / max(diag, 1.0);
+
+    // Half angle clamped to safe range (< 85 degrees)
+    float fovClamped = clamp(FieldOfView, 0.1, 160.0);
+    float halfFovRad = (fovClamped * 0.5) * (PI / 180.0);
+    float tanHalfFov = tan(halfFovRad);
+
+    float rPrime;
+    if (ReverseLensDistortion > 0.5) {
+        // Reverse lens distortion: compress coordinates (barrel projection)
+        rPrime = atan(normR * tanHalfFov) / halfFovRad;
+    } else {
+        // Forward lens distortion: expand coordinates (pincushion/fisheye projection)
+        float theta = normR * halfFovRad;
+        if (theta >= 1.55) {
+            return half4(0.0); // Asymptote cutoff
+        }
+        rPrime = tan(theta) / max(tanHalfFov, 1e-4);
+    }
+
+    float2 distortedCoord = center + (p / dist) * (rPrime * diag);
+
+    // Discard coordinates shifted outside canvas bounds
+    if (abs(distortedCoord.x) > halfRes.x || abs(distortedCoord.y) > halfRes.y) {
+        return half4(0.0);
+    }
+
+    return layer.eval(distortedCoord);
+}

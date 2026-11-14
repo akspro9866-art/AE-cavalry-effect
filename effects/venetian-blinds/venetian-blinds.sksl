@@ -1,0 +1,50 @@
+// Adobe After Effects "Venetian Blinds" (ADBE Venetian Blinds)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.3`):
+uniform float TransitionCompletion; // Wipe progress percentage (default: 0.0, range: 0.0 to 100.0)
+uniform float Direction;            // Strip orientation angle in degrees (default: 90.0, range: -360.0 to 360.0)
+uniform float Width;                // Width of each blind strip in pixels (default: 20.0, range: 1.0 to 500.0)
+uniform float Feather;              // Edge softness in pixels (default: 0.0, range: 0.0 to 100.0)
+
+half4 main(float2 fragCoord) {
+    if (TransitionCompletion <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+    if (TransitionCompletion >= 99.99) {
+        return half4(0.0);
+    }
+
+    half4 col = layer.eval(fragCoord);
+    if (col.a <= 0.001) {
+        return col;
+    }
+
+    float rad = Direction * 0.017453292519943295;
+    float2 norm = float2(cos(rad), sin(rad));
+
+    float s = dot(fragCoord, norm);
+    float w = max(Width, 1.0);
+
+    float pos = mod(s, w);
+    if (pos < 0.0) pos += w;
+    float t = pos / w; // Normalized fraction across strip [0, 1]
+
+    float comp = clamp(TransitionCompletion * 0.01, 0.0, 1.0);
+    float fNorm = clamp(Feather / w, 0.0, 0.49);
+
+    float mask;
+    if (fNorm <= 0.001) {
+        mask = t >= comp ? 1.0 : 0.0;
+    } else {
+        mask = smoothstep(comp - fNorm, comp + fNorm, t);
+    }
+
+    return col * half(mask);
+}

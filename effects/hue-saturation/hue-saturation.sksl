@@ -1,0 +1,114 @@
+// Adobe After Effects "Hue/Saturation" (ADBE HUE SATURATION)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.7`):
+uniform float ChannelControl;      // 0 = Master
+uniform float MasterHue;           // Hue shift in degrees (default: 0.0, range: -180.0 to 180.0)
+uniform float MasterSaturation;    // Saturation shift percent (default: 0.0, range: -100.0 to 100.0)
+uniform float MasterLightness;     // Lightness shift percent (default: 0.0, range: -100.0 to 100.0)
+uniform float Colorize;            // 0 = Off, 1 = On
+uniform float ColorizeHue;         // Colorize Hue in degrees (default: 0.0, range: 0.0 to 360.0)
+uniform float ColorizeSaturation;  // Colorize Saturation percent (default: 50.0, range: 0.0 to 100.0)
+uniform float ColorizeLightness;   // Colorize Lightness percent (default: 0.0, range: -100.0 to 100.0)
+
+float3 rgbToHsl(float3 c) {
+    float maxC = max(c.r, max(c.g, c.b));
+    float minC = min(c.r, min(c.g, c.b));
+    float l = (maxC + minC) * 0.5;
+    float delta = maxC - minC;
+
+    if (delta <= 1e-5) {
+        return float3(0.0, 0.0, l);
+    }
+
+    float s = l > 0.5 ? delta / (2.0 - maxC - minC) : delta / (maxC + minC);
+    float h = 0.0;
+    if (maxC == c.r) {
+        h = (c.g - c.b) / delta + (c.g < c.b ? 6.0 : 0.0);
+    } else if (maxC == c.g) {
+        h = (c.b - c.r) / delta + 2.0;
+    } else {
+        h = (c.r - c.g) / delta + 4.0;
+    }
+    h /= 6.0;
+
+    return float3(h, s, l);
+}
+
+float hue2rgb(float p, float q, float t) {
+    if (t < 0.0) t += 1.0;
+    if (t > 1.0) t -= 1.0;
+    if (t < 1.0 / 6.0) return p + (q - p) * 6.0 * t;
+    if (t < 1.0 / 2.0) return q;
+    if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+    return p;
+}
+
+float3 hslToRgb(float3 hsl) {
+    float h = hsl.x;
+    float s = hsl.y;
+    float l = hsl.z;
+
+    if (s <= 1e-5) {
+        return float3(l);
+    }
+
+    float q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+    float p = 2.0 * l - q;
+
+    return float3(
+        hue2rgb(p, q, h + 1.0 / 3.0),
+        hue2rgb(p, q, h),
+        hue2rgb(p, q, h - 1.0 / 3.0)
+    );
+}
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+    if (src.a <= 0.0001) {
+        return src;
+    }
+
+    float alpha = float(src.a);
+    float3 straightRgb = float3(src.rgb) / max(alpha, 1e-4);
+    float3 hsl = rgbToHsl(straightRgb);
+
+    if (Colorize > 0.5) {
+        // Colorize Mode
+        hsl.x = fract(ColorizeHue / 360.0);
+        hsl.y = clamp(ColorizeSaturation / 100.0, 0.0, 1.0);
+        float cl = ColorizeLightness / 100.0;
+        if (cl > 0.0) {
+            hsl.z = hsl.z + (1.0 - hsl.z) * cl;
+        } else if (cl < 0.0) {
+            hsl.z = hsl.z * (1.0 + cl);
+        }
+    } else {
+        // Master Hue / Saturation / Lightness Mode
+        hsl.x = fract(hsl.x + MasterHue / 360.0 + 1.0);
+        float sat = MasterSaturation / 100.0;
+        if (sat > 0.0) {
+            hsl.y = hsl.y + (1.0 - hsl.y) * sat;
+        } else if (sat < 0.0) {
+            hsl.y = hsl.y * (1.0 + sat);
+        }
+        float lit = MasterLightness / 100.0;
+        if (lit > 0.0) {
+            hsl.z = hsl.z + (1.0 - hsl.z) * lit;
+        } else if (lit < 0.0) {
+            hsl.z = hsl.z * (1.0 + lit);
+        }
+    }
+
+    hsl.y = clamp(hsl.y, 0.0, 1.0);
+    hsl.z = clamp(hsl.z, 0.0, 1.0);
+
+    float3 finalRgb = clamp(hslToRgb(hsl), 0.0, 1.0);
+    return half4(half3(finalRgb * alpha), src.a);
+}

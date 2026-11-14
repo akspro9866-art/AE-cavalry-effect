@@ -1,0 +1,63 @@
+// Adobe After Effects "Sharpen" (ADBE Sharpen)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.3`):
+uniform float SharpenAmount;  // Sharpen strength (default: 25.0, range: 0.0 to 500.0)
+uniform float Radius;         // Neighborhood radius in pixels (default: 1.0, range: 0.1 to 10.0)
+uniform float Threshold;      // Luminance threshold (default: 0.0, range: 0.0 to 255.0)
+uniform float PreserveAlpha;  // 1 = Preserve original alpha (default: 1.0)
+
+half4 main(float2 fragCoord) {
+    half4 centerSample = layer.eval(fragCoord);
+    if (SharpenAmount <= 0.001 || centerSample.a <= 0.0001) {
+        return centerSample;
+    }
+
+    float alpha = float(centerSample.a);
+    float3 centerRgb = float3(centerSample.rgb) / max(alpha, 1e-4);
+
+    float r = max(Radius, 0.5);
+
+    // 8-neighbor unsharp convolution
+    float3 sum = float3(0.0);
+    float totalW = 0.0;
+
+    float2 offsets[8];
+    offsets[0] = float2( r,  0.0);
+    offsets[1] = float2(-r,  0.0);
+    offsets[2] = float2( 0.0,  r);
+    offsets[3] = float2( 0.0, -r);
+    offsets[4] = float2( r,   r) * 0.7071;
+    offsets[5] = float2(-r,   r) * 0.7071;
+    offsets[6] = float2( r,  -r) * 0.7071;
+    offsets[7] = float2(-r,  -r) * 0.7071;
+
+    for (int i = 0; i < 8; i++) {
+        half4 s = layer.eval(fragCoord + offsets[i]);
+        float a = max(float(s.a), 1e-4);
+        float3 unmult = float3(s.rgb) / a;
+        float w = (i < 4) ? 0.15 : 0.10;
+        sum += unmult * w;
+        totalW += w;
+    }
+
+    float3 blurred = sum / totalW;
+    float3 delta = centerRgb - blurred;
+
+    float threshNorm = Threshold / 255.0;
+    float deltaMag = length(delta);
+
+    if (deltaMag >= threshNorm) {
+        float factor = SharpenAmount / 25.0;
+        centerRgb += delta * factor;
+    }
+
+    centerRgb = clamp(centerRgb, 0.0, 1.0);
+    return half4(half3(centerRgb * alpha), centerSample.a);
+}

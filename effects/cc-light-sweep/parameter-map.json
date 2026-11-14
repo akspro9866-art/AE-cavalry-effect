@@ -1,0 +1,103 @@
+{
+  "effectSlug": "cc-light-sweep",
+  "aeName": "CC Light Sweep",
+  "aeMatchName": "CC Light Sweep",
+  "aeCategory": "Lighting & Glow",
+  "provenanceNote": "Reconstructs Adobe After Effects CC Light Sweep with linear/smooth/sharp beam profiles, Sobel alpha edge specular highlights, and additive silhouette compositing.",
+  "parameters": [
+    {
+      "id": "CenterX",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Center X",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "X focal center coordinate of light sweep."
+    },
+    {
+      "id": "CenterY",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Center Y",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Y focal center coordinate of light sweep."
+    },
+    {
+      "id": "Direction",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Direction",
+      "default": 30.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Angle of light streak orientation."
+    },
+    {
+      "id": "Shape",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Shape",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Linear" },
+        { "value": 1, "label": "Smooth" },
+        { "value": 2, "label": "Sharp" }
+      ],
+      "description": "Cross-sectional falloff curve profile."
+    },
+    {
+      "id": "Width",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Width",
+      "default": 50.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Cross-sectional span of the light band."
+    },
+    {
+      "id": "SweepIntensity",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Sweep Intensity",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "unit": "multiplier",
+      "description": "Center beam brightness."
+    },
+    {
+      "id": "EdgeIntensity",
+      "slot": "inputs.6",
+      "type": "double",
+      "aeName": "Edge Intensity",
+      "default": 2.0,
+      "min": 0.0,
+      "max": 10.0,
+      "unit": "multiplier",
+      "description": "Silhouette boundary specular intensity."
+    },
+    {
+      "id": "EdgeThickness",
+      "slot": "inputs.7",
+      "type": "double",
+      "aeName": "Edge Thickness",
+      "default": 4.0,
+      "min": 0.0,
+      "max": 50.0,
+      "unit": "pixels",
+      "description": "Sampling radius for edge bevel detection."
+    },
+    {
+      "id": "LightColor",
+      "slot": "inputs.8",
+      "type": "color",
+      "aeName": "Light Color",
+      "default": { "r": 255, "g": 255, "b": 255, "a": 255 },
+      "description": "Color swatch of the sweeping light."
+    }
+  ]
+}

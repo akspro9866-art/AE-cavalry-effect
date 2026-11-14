@@ -1,0 +1,110 @@
+// Adobe After Effects "Fast Box Blur" (ADBE Box Blur2)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.3`):
+uniform float BlurRadius;        // Box blur radius in pixels (default: 10.0, range: 0.0 to 500.0)
+uniform float Iterations;        // Number of box passes: 1=Box, 2=Triangle, 3=Cubic B-Spline (default: 1.0, range: 1.0 to 5.0)
+uniform float BlurDimensions;    // 0 = Both, 1 = Horizontal, 2 = Vertical
+uniform float RepeatEdgePixels;  // 0 = Off, 1 = On
+
+half4 sampleClamped(float2 coord, float2 halfRes, bool repeatEdges) {
+    if (repeatEdges) {
+        float2 c = clamp(coord, -halfRes + 0.5, halfRes - 0.5);
+        return layer.eval(c);
+    }
+    if (abs(coord.x) > halfRes.x || abs(coord.y) > halfRes.y) {
+        return half4(0.0);
+    }
+    return layer.eval(coord);
+}
+
+float computeBoxWeight(float dist, float radius, int iters) {
+    float normDist = abs(dist) / max(radius * float(iters), 1e-4);
+    if (normDist > 1.0) return 0.0;
+    if (iters <= 1) {
+        // Pure uniform rectangular box profile
+        return 1.0;
+    } else if (iters == 2) {
+        // Linear triangular profile (convolution of 2 boxes)
+        return 1.0 - normDist;
+    } else {
+        // Cubic B-spline profile (convolution of 3+ boxes)
+        float d = normDist * 2.0;
+        if (d <= 1.0) {
+            return (2.0 / 3.0) - d * d + 0.5 * d * d * d;
+        } else {
+            float t = 2.0 - d;
+            return (1.0 / 6.0) * t * t * t;
+        }
+    }
+}
+
+half4 main(float2 fragCoord) {
+    if (BlurRadius <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+    bool repeatEdges = (RepeatEdgePixels > 0.5);
+
+    int iters = int(clamp(floor(Iterations + 0.5), 1.0, 5.0));
+    int dim = int(floor(BlurDimensions + 0.5));
+    float r = max(BlurRadius, 0.5);
+
+    half4 accum = sampleClamped(fragCoord, halfRes, repeatEdges);
+    float totalW = 1.0;
+
+    if (dim == 1) {
+        // Horizontal only (32-tap line)
+        for (int i = 1; i <= 16; i++) {
+            float dist = (float(i) / 16.0) * r * float(iters);
+            float w = computeBoxWeight(dist, r, iters);
+            half4 s1 = sampleClamped(fragCoord + float2(dist, 0.0), halfRes, repeatEdges);
+            half4 s2 = sampleClamped(fragCoord - float2(dist, 0.0), halfRes, repeatEdges);
+            accum += (s1 + s2) * half(w);
+            totalW += 2.0 * w;
+        }
+    } else if (dim == 2) {
+        // Vertical only (32-tap line)
+        for (int i = 1; i <= 16; i++) {
+            float dist = (float(i) / 16.0) * r * float(iters);
+            float w = computeBoxWeight(dist, r, iters);
+            half4 s1 = sampleClamped(fragCoord + float2(0.0, dist), halfRes, repeatEdges);
+            half4 s2 = sampleClamped(fragCoord - float2(0.0, dist), halfRes, repeatEdges);
+            accum += (s1 + s2) * half(w);
+            totalW += 2.0 * w;
+        }
+    } else {
+        // Horizontal and Vertical: separable cascaded cross-kernel with diagonal taps
+        for (int i = 1; i <= 12; i++) {
+            float dist = (float(i) / 12.0) * r * float(iters);
+            float w = computeBoxWeight(dist, r, iters);
+
+            half4 sH1 = sampleClamped(fragCoord + float2(dist, 0.0), halfRes, repeatEdges);
+            half4 sH2 = sampleClamped(fragCoord - float2(dist, 0.0), halfRes, repeatEdges);
+            half4 sV1 = sampleClamped(fragCoord + float2(0.0, dist), halfRes, repeatEdges);
+            half4 sV2 = sampleClamped(fragCoord - float2(0.0, dist), halfRes, repeatEdges);
+            accum += (sH1 + sH2 + sV1 + sV2) * half(w);
+            totalW += 4.0 * w;
+
+            // Diagonal corner taps for 2D square spatial expansion
+            float diagDist = dist * 0.7071;
+            float wDiag = w * 0.8;
+            half4 sD1 = sampleClamped(fragCoord + float2(diagDist, diagDist), halfRes, repeatEdges);
+            half4 sD2 = sampleClamped(fragCoord - float2(diagDist, diagDist), halfRes, repeatEdges);
+            half4 sD3 = sampleClamped(fragCoord + float2(diagDist, -diagDist), halfRes, repeatEdges);
+            half4 sD4 = sampleClamped(fragCoord - float2(diagDist, -diagDist), halfRes, repeatEdges);
+            accum += (sD1 + sD2 + sD3 + sD4) * half(wDiag);
+            totalW += 4.0 * wDiag;
+        }
+    }
+
+    return accum / half(totalW);
+}

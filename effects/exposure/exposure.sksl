@@ -1,0 +1,42 @@
+// Adobe After Effects "Exposure" (ADBE Exposure)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.2`):
+uniform float Exposure;         // Exposure adjustment in EV stops (default: 0.0, range: -10.0 to 10.0)
+uniform float Offset;           // Black point offset bias (default: 0.0, range: -0.5 to 0.5)
+uniform float GammaCorrection;  // Gamma exponent correction (default: 1.0, range: 0.1 to 5.0)
+
+float adjustExposureChannel(float c, float expVal, float offsetVal, float gammaVal) {
+    // AE algorithm: C' = C * 2^Exposure + Offset, then C'' = sign(C') * |C'|^(1/Gamma)
+    float scaled = c * exp2(expVal) + offsetVal;
+    if (abs(scaled) <= 1e-6) return 0.0;
+    float g = max(gammaVal, 0.01);
+    float signVal = sign(scaled);
+    float powered = pow(abs(scaled), 1.0 / g);
+    return signVal * powered;
+}
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+    if (src.a <= 0.0001) {
+        return src;
+    }
+
+    float alpha = float(src.a);
+    float3 rgb = float3(src.rgb) / max(alpha, 1e-4);
+
+    rgb.r = adjustExposureChannel(rgb.r, Exposure, Offset, GammaCorrection);
+    rgb.g = adjustExposureChannel(rgb.g, Exposure, Offset, GammaCorrection);
+    rgb.b = adjustExposureChannel(rgb.b, Exposure, Offset, GammaCorrection);
+
+    // Clamp output within safe visual display range
+    rgb = clamp(rgb, 0.0, 1.0);
+
+    return half4(half3(rgb * alpha), src.a);
+}

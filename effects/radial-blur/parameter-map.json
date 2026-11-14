@@ -1,0 +1,63 @@
+{
+  "effectSlug": "radial-blur",
+  "aeName": "Radial Blur",
+  "aeMatchName": "ADBE Radial Blur",
+  "aeCategory": "Blur & Sharpen",
+  "provenanceNote": "Reconstructs Adobe After Effects Radial Blur (ADBE Radial Blur) with Spin (rotational angular convolution) and Zoom (radial scaling convolution) modes around a user-defined center point.",
+  "parameters": [
+    {
+      "id": "Amount",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Amount",
+      "default": 10.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "ratio",
+      "description": "Intensity of radial blur dispersion."
+    },
+    {
+      "id": "BlurType",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Type",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Spin" },
+        { "value": 1, "label": "Zoom" }
+      ],
+      "description": "Spin (rotational orbit) or Zoom (radial magnification)."
+    },
+    {
+      "id": "Quality",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Quality",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Draft" },
+        { "value": 1, "label": "Good" },
+        { "value": 2, "label": "Best" }
+      ],
+      "description": "Sample density and tap quality."
+    },
+    {
+      "id": "CenterX",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Center X",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "X focal center coordinate."
+    },
+    {
+      "id": "CenterY",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Center Y",
+      "default": 0.0,
+      "unit": "pixels",
+      "description": "Y focal center coordinate."
+    }
+  ]
+}

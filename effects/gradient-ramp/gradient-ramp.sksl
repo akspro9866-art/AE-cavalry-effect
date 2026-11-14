@@ -1,0 +1,67 @@
+// Adobe After Effects "Gradient Ramp" (ADBE Ramp)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.12`):
+uniform float StartPointX;        // Start position X in pixels (default: -100.0)
+uniform float StartPointY;        // Start position Y in pixels (default: -100.0)
+uniform float4 StartColor;        // Start color RGBA (default: [0.0, 0.0, 0.0, 1.0])
+
+uniform float EndPointX;          // End position X in pixels (default: 100.0)
+uniform float EndPointY;          // End position Y in pixels (default: 100.0)
+uniform float4 EndColor;          // End color RGBA (default: [1.0, 1.0, 1.0, 1.0])
+
+uniform float RampShape;          // 0 = Linear Ramp, 1 = Radial Ramp
+uniform float RampScatter;        // Dither scatter percentage (default: 0.0, range: 0.0 to 100.0)
+uniform float BlendWithOriginal;  // Blend percentage (default: 0.0, range: 0.0 to 100.0)
+
+float pseudoRandom(float2 p) {
+    return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+half4 main(float2 fragCoord) {
+    half4 orig = layer.eval(fragCoord);
+
+    float2 p0 = float2(StartPointX, StartPointY);
+    float2 p1 = float2(EndPointX, EndPointY);
+
+    float t = 0.0;
+    if (RampShape > 0.5) {
+        // Radial Ramp
+        float r = length(p1 - p0);
+        float d = length(fragCoord - p0);
+        t = clamp(d / max(r, 0.001), 0.0, 1.0);
+    } else {
+        // Linear Ramp
+        float2 v = p1 - p0;
+        float lenSq = dot(v, v);
+        if (lenSq > 0.0001) {
+            t = clamp(dot(fragCoord - p0, v) / lenSq, 0.0, 1.0);
+        }
+    }
+
+    // Ramp scatter (spatial dithering)
+    if (RampScatter > 0.01) {
+        float noise = (pseudoRandom(fragCoord) - 0.5) * (RampScatter * 0.01) * 0.05;
+        t = clamp(t + noise, 0.0, 1.0);
+    }
+
+    half4 rampCol = half4(mix(StartColor, EndColor, t));
+
+    // When layer has alpha, modulate ramp by layer alpha or blend
+    float blendFactor = clamp(BlendWithOriginal * 0.01, 0.0, 1.0);
+
+    if (orig.a <= 0.001) {
+        // Transparent source region: display pure ramp
+        return rampCol;
+    }
+
+    // Composite ramp over layer, respecting original alpha
+    half4 rampModulated = rampCol * orig.a;
+    return mix(rampModulated, orig, half(blendFactor));
+}

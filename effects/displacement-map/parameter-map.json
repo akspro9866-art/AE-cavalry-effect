@@ -1,0 +1,90 @@
+{
+  "effectSlug": "displacement-map",
+  "aeName": "Displacement Map",
+  "aeMatchName": "ADBE Displacement Map",
+  "aeCategory": "Distort",
+  "provenanceNote": "Reconstructs Adobe After Effects Displacement Map (ADBE Displacement Map) using channel-selective coordinate deflection, boundary wrapping, and dynamic secondary map layer connections.",
+  "parameters": [
+    {
+      "id": "MaxHorizontalDisplacement",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Max Horizontal Displacement",
+      "default": 10.0,
+      "min": -500.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Maximum horizontal pixel deflection corresponding to a full channel variance."
+    },
+    {
+      "id": "MaxVerticalDisplacement",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Max Vertical Displacement",
+      "default": 10.0,
+      "min": -500.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Maximum vertical pixel deflection corresponding to a full channel variance."
+    },
+    {
+      "id": "HorizontalSourceChannel",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Use For Horizontal Displacement",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Red" },
+        { "value": 1, "label": "Green" },
+        { "value": 2, "label": "Blue" },
+        { "value": 3, "label": "Alpha" },
+        { "value": 4, "label": "Luminance" },
+        { "value": 5, "label": "Lightness" },
+        { "value": 6, "label": "Off" }
+      ],
+      "description": "Color channel used to drive horizontal coordinate deflection."
+    },
+    {
+      "id": "VerticalSourceChannel",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Use For Vertical Displacement",
+      "default": 1.0,
+      "options": [
+        { "value": 0, "label": "Red" },
+        { "value": 1, "label": "Green" },
+        { "value": 2, "label": "Blue" },
+        { "value": 3, "label": "Alpha" },
+        { "value": 4, "label": "Luminance" },
+        { "value": 5, "label": "Lightness" },
+        { "value": 6, "label": "Off" }
+      ],
+      "description": "Color channel used to drive vertical coordinate deflection."
+    },
+    {
+      "id": "MapBehavior",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Displacement Map Behavior",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Center Map" },
+        { "value": 1, "label": "Stretch to Fit" },
+        { "value": 2, "label": "Tile Map" }
+      ],
+      "description": "Coordinate mapping behavior between source layer and displacement layer."
+    },
+    {
+      "id": "EdgeBehavior",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Edge Behavior",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "Off" },
+        { "value": 1, "label": "Wrap Pixels Around" }
+      ],
+      "description": "Wraps displaced coordinates across bounding boundaries."
+    }
+  ]
+}

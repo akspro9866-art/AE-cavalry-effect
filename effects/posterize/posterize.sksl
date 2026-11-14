@@ -1,0 +1,32 @@
+// Adobe After Effects "Posterize" (ADBE Posterize)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`):
+uniform float Levels;  // Number of tonal tonal steps per channel (default: 4.0, range: 2.0 to 255.0)
+
+float quantizeChannel(float c, float numLevels) {
+    float n = max(floor(numLevels + 0.5), 2.0);
+    return clamp(floor(c * n) / (n - 1.0), 0.0, 1.0);
+}
+
+half4 main(float2 fragCoord) {
+    half4 src = layer.eval(fragCoord);
+    if (src.a <= 0.0001) {
+        return src;
+    }
+
+    float alpha = float(src.a);
+    float3 rgb = float3(src.rgb) / max(alpha, 1e-4);
+
+    rgb.r = quantizeChannel(rgb.r, Levels);
+    rgb.g = quantizeChannel(rgb.g, Levels);
+    rgb.b = quantizeChannel(rgb.b, Levels);
+
+    return half4(half3(rgb * alpha), src.a);
+}

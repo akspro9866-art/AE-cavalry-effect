@@ -1,0 +1,53 @@
+{
+  "effectSlug": "venetian-blinds",
+  "aeName": "Venetian Blinds",
+  "aeMatchName": "ADBE Venetian Blinds",
+  "aeCategory": "Transition",
+  "provenanceNote": "Reconstructs Adobe After Effects Venetian Blinds (ADBE Venetian Blinds) using periodic linear stripe partitioning, directional angle projection, and smoothstep edge feathering.",
+  "parameters": [
+    {
+      "id": "TransitionCompletion",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Transition Completion",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "percent",
+      "description": "Progress percentage of the wipe transition (0 = fully visible, 100 = fully hidden)."
+    },
+    {
+      "id": "Direction",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Direction",
+      "default": 90.0,
+      "min": -360.0,
+      "max": 360.0,
+      "unit": "degrees",
+      "description": "Orientation angle of the blind strips."
+    },
+    {
+      "id": "Width",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Width",
+      "default": 20.0,
+      "min": 1.0,
+      "max": 500.0,
+      "unit": "pixels",
+      "description": "Spatial repetition width of individual blind strips."
+    },
+    {
+      "id": "Feather",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Feather",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 100.0,
+      "unit": "pixels",
+      "description": "Edge softness across transition boundaries."
+    }
+  ]
+}

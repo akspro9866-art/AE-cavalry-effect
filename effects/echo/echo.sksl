@@ -1,0 +1,60 @@
+// Adobe After Effects "Echo" (ADBE Echo)
+// Reconstructed mathematically for Cavalry 2.8+ as a procedural GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms:
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Layer bounding dimensions in pixels
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.4`):
+uniform float EchoTime;          // Temporal offset in seconds (default: -0.033)
+uniform float NumberOfEchoes;    // Number of echo instances (default: 3.0, range: 1.0 to 16.0)
+uniform float StartingIntensity; // Initial intensity multiplier (default: 1.0, range: 0.0 to 1.0)
+uniform float Decay;             // Decay multiplier per echo step (default: 0.5, range: 0.0 to 1.0)
+uniform float EchoOperator;      // 0=Add, 1=Maximum, 2=Minimum, 3=Screen, 4=Composite/Over, 5=Behind
+
+half4 blendEcho(half4 accum, half4 current, int op) {
+    if (op == 0) {
+        // Add
+        return accum + current;
+    } else if (op == 1) {
+        // Maximum
+        return max(accum, current);
+    } else if (op == 2) {
+        // Minimum
+        return min(accum, current);
+    } else if (op == 3) {
+        // Screen
+        return accum + current - (accum * current);
+    } else if (op == 4) {
+        // Composite / Over (current over accum)
+        return current + accum * (1.0 - current.a);
+    } else {
+        // Behind (accum over current)
+        return accum + current * (1.0 - accum.a);
+    }
+}
+
+half4 main(float2 fragCoord) {
+    half4 baseCol = layer.eval(fragCoord);
+    int nEchoes = int(clamp(floor(NumberOfEchoes + 0.5), 1.0, 16.0));
+    int op = int(floor(EchoOperator + 0.5));
+
+    half4 result = baseCol * half(StartingIntensity);
+    float currentWeight = StartingIntensity;
+
+    // Procedural multi-stage trail simulation in SkSL
+    // (Native multi-frame temporal caching is handled via scene-graph duplicate rig)
+    float2 trailOffset = float2(EchoTime * 60.0, EchoTime * 30.0);
+
+    for (int i = 1; i <= 16; i++) {
+        if (i >= nEchoes) break;
+        currentWeight *= Decay;
+        float2 sampleCoord = fragCoord + trailOffset * float(i);
+        half4 echoSample = layer.eval(sampleCoord) * half(currentWeight);
+        result = blendEcho(result, echoSample, op);
+    }
+
+    return result;
+}

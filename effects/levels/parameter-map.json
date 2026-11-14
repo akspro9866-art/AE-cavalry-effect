@@ -1,0 +1,78 @@
+{
+  "effectSlug": "levels",
+  "aeName": "Levels",
+  "aeMatchName": "ADBE Set Levels",
+  "aeCategory": "Color Correction",
+  "provenanceNote": "Reconstructs Adobe After Effects Levels (ADBE Set Levels) with input/output scaling, gamma curve adjustment, and individual channel selection.",
+  "parameters": [
+    {
+      "id": "InputBlack",
+      "slot": "inputs.0",
+      "type": "double",
+      "aeName": "Input Black",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 255.0,
+      "unit": "levels",
+      "description": "Floor of the input luminance range (0-255)."
+    },
+    {
+      "id": "InputWhite",
+      "slot": "inputs.1",
+      "type": "double",
+      "aeName": "Input White",
+      "default": 255.0,
+      "min": 0.0,
+      "max": 255.0,
+      "unit": "levels",
+      "description": "Ceiling of the input luminance range (0-255)."
+    },
+    {
+      "id": "Gamma",
+      "slot": "inputs.2",
+      "type": "double",
+      "aeName": "Gamma",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 10.0,
+      "unit": "ratio",
+      "description": "Midtone gamma response curve."
+    },
+    {
+      "id": "OutputBlack",
+      "slot": "inputs.3",
+      "type": "double",
+      "aeName": "Output Black",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 255.0,
+      "unit": "levels",
+      "description": "Output black floor remapping."
+    },
+    {
+      "id": "OutputWhite",
+      "slot": "inputs.4",
+      "type": "double",
+      "aeName": "Output White",
+      "default": 255.0,
+      "min": 0.0,
+      "max": 255.0,
+      "unit": "levels",
+      "description": "Output white ceiling remapping."
+    },
+    {
+      "id": "Channel",
+      "slot": "inputs.5",
+      "type": "double",
+      "aeName": "Channel",
+      "default": 0.0,
+      "options": [
+        { "value": 0, "label": "RGB" },
+        { "value": 1, "label": "Red" },
+        { "value": 2, "label": "Green" },
+        { "value": 3, "label": "Blue" }
+      ],
+      "description": "Target color channel to apply level correction to."
+    }
+  ]
+}

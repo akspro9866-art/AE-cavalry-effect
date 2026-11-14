@@ -1,0 +1,60 @@
+// Adobe After Effects "Directional Blur" (ADBE Directional Blur)
+// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).
+//
+// Built-in Cavalry preamble uniforms (injected automatically by Cavalry runtime):
+//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
+//   `resolution` (float2)   - Bounding dimensions in pixels (centered coordinate space)
+
+uniform shader layer;
+
+// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.2`):
+uniform float Direction;         // Direction angle in degrees (default: 0.0, 0 = Vertical, 90 = Horizontal)
+uniform float BlurLength;        // Length of directional convolution in pixels (default: 10.0, range: 0.0 to 500.0)
+uniform float RepeatEdgePixels;  // 0 = Off, 1 = On (clamp to bounding box)
+
+half4 sampleClamped(float2 coord, float2 halfRes, bool repeatEdges) {
+    if (repeatEdges) {
+        float2 c = clamp(coord, -halfRes + 0.5, halfRes - 0.5);
+        return layer.eval(c);
+    }
+    if (abs(coord.x) > halfRes.x || abs(coord.y) > halfRes.y) {
+        return half4(0.0);
+    }
+    return layer.eval(coord);
+}
+
+half4 main(float2 fragCoord) {
+    if (BlurLength <= 0.001) {
+        return layer.eval(fragCoord);
+    }
+
+    float2 res = max(resolution, float2(1.0, 1.0));
+    float2 halfRes = res * 0.5;
+    bool repeatEdges = (RepeatEdgePixels > 0.5);
+
+    // AE Angle: 0 degrees = vertical (along Y), 90 degrees = horizontal (along X)
+    float rad = Direction * 0.017453292519943295; // pi / 180
+    float2 dir = float2(sin(rad), -cos(rad));
+
+    float halfLen = BlurLength * 0.5;
+
+    // Center sample (weight 1.0)
+    half4 accum = sampleClamped(fragCoord, halfRes, repeatEdges);
+    float totalW = 1.0;
+
+    // 32-tap symmetric line convolution (16 steps on each side)
+    for (int i = 1; i <= 16; i++) {
+        float fi = float(i);
+        float dist = (fi / 16.0) * halfLen;
+        float w = 1.0 - (fi / 17.0); // Triangular Bartlett window matching AE linear convolution
+        float2 offset = dir * dist;
+
+        half4 s1 = sampleClamped(fragCoord + offset, halfRes, repeatEdges);
+        half4 s2 = sampleClamped(fragCoord - offset, halfRes, repeatEdges);
+
+        accum += (s1 + s2) * half(w);
+        totalW += 2.0 * w;
+    }
+
+    return accum / half(totalW);
+}

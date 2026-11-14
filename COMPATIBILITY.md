@@ -63,3 +63,7 @@ The standalone distribution script (`cavalry-script/AE Effects.js`) runs inside 
    Cavalry dynamic attribute keys must adhere to standard camelCase naming without special characters or spaces.
 3. **Filter Ordering**:
    Cavalry evaluates attached filters in array index order. Applying multiple effects chains them sequentially.
+4. **Temporal Effects & Secondary Layer Buffers**:
+   - **Echo (`echo`)**: GPU SkSL in Cavalry operates as a stateless single-frame fragment shader (`layer.eval(fragCoord)`). It does not maintain an historical multi-frame texture buffer in GPU memory. True multi-frame temporal echoing across animated shapes is achieved via scene-graph layer duplication (`timeOffset` / `inFrame` shifts and opacity decay) or the procedural trailing shader. Status: `approximation` / `mock-tested`.
+   - **Time Displacement (`time-displacement`)**: In Adobe After Effects, Time Displacement evaluates prior and future video frames per fragment $I(x, y, t + \Delta t)$. Because Cavalry 2.8 does not expose a 3D temporal video texture volume in SkSL, the effect projects temporal latency as spatial phase delay while linking the secondary source layer via `mattes.0`. Status: `approximation` / `mock-tested`.
+   - **Displacement Map (`displacement-map`)**: Connects the secondary source layer via `mattes.0` and maps color/luminance channels to horizontal/vertical coordinate shifts with boundary edge wrapping.
