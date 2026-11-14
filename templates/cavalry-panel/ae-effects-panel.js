@@ -2,6 +2,43 @@
 (function () {
     var DEFAULT_LIBRARY_ROOT = /* @@DEFAULT_LIBRARY_ROOT@@ */;
     var EXCLUDED_STATUSES = { draft: true, failed: true, disabled: true, deprecated: true, broken: true };
+
+    // Shared helper runtime. The bundled effect runners each previously re-declared
+    // their own copies of generic helpers (safeCall, clampNum, setAttrValue,
+    // bindDynamicSlot); the generator now hoists the byte-identical variants into
+    // this single object and each runner binds them with one alias line
+    // (see scripts/sync-cavalry-script.mjs — variant-keyed, behavior-preserving).
+    // Hot-reloaded disk runners compile raw implementation sources that carry their
+    // own inline helpers and do not depend on this object.
+    var __AE_SHARED__ = (function () {
+        function createSafeCall(tag) {
+            return function safeCall(fn, fallback) {
+                try {
+                    return fn();
+                } catch (err) {
+                    if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                        console.warn(tag + ' call failed: ' + (err && err.message ? err.message : err));
+                    }
+                    return fallback;
+                }
+            };
+        }
+
+        function clampNum(v, lo, hi, fb) {
+            var n = Number(v);
+            if (!isFinite(n)) return fb;
+            return n < lo ? lo : (n > hi ? hi : n);
+        }
+
+        /* @@SHARED_VARIANTS@@ */
+
+        return {
+            createSafeCall: createSafeCall,
+            clampNum: clampNum
+            /* @@SHARED_EXPORTS@@ */
+        };
+    })();
+
     var BUNDLED_EFFECTS = /* @@BUNDLED_EFFECTS@@ */;
     var BUNDLED_MTIMES = /* @@BUNDLED_MTIMES@@ */;
 
@@ -26,13 +63,7 @@
     var lastRegistryMtime = /* @@REGISTRY_MTIME@@ */;
     var isApplying = false;
 
-    function safeCall(fn, fallback) {
-        try {
-            return fn();
-        } catch (err) {
-            return fallback;
-        }
-    }
+    var safeCall = __AE_SHARED__.createSafeCall('[AE:Panel]');
 
     function getThemeHex(key, fallback) {
         var c = safeCall(function () {
@@ -316,7 +347,7 @@
                 var mech = first.mechanism || first.driverType || res.workflow || item.primaryStrategy;
                 var act = first.action || 'applied';
                 var warnSuffix = Array.isArray(res.warnings) && res.warnings.length
-                    ? ' (' + res.warnings.length + ' skipped)'
+                    ? ' (' + res.warnings.length + ' warning' + (res.warnings.length === 1 ? '' : 's') + ')'
                     : '';
                 var msg = 'Applied ' + item.aeName + ' (' + mech + ') to ' + count + ' layer' + (count === 1 ? '' : 's') + ' [' + act + ']' + warnSuffix;
                 setStatus(msg, accentColor);
