@@ -7,7 +7,7 @@
  */
 (function () {
     /* @@BEGIN_SKSL@@ */
-    var SKSL_SOURCE = "// Adobe After Effects \"Displacement Map\" (ADBE Displacement Map)\n// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).\n//\n// Built-in Cavalry preamble uniforms:\n//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))\n//   `resolution` (float2)   - Layer bounding dimensions in pixels\n\nuniform shader layer;\n\n// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):\nuniform float MaxHorizontalDisplacement; // Maximum horizontal pixel shift (default: 10.0, range: -500.0 to 500.0)\nuniform float MaxVerticalDisplacement;   // Maximum vertical pixel shift (default: 10.0, range: -500.0 to 500.0)\nuniform float HorizontalSourceChannel;  // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance, 5=Lightness, 6=Off\nuniform float VerticalSourceChannel;    // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance, 5=Lightness, 6=Off\nuniform float MapBehavior;              // 0=Center Map, 1=Stretch to Fit, 2=Tile Map\nuniform float EdgeBehavior;             // 0=Off (transparent bounds), 1=Wrap Pixels Around\n\nfloat extractChannel(half4 col, int ch) {\n    if (ch == 0) return float(col.r) - 0.5;\n    if (ch == 1) return float(col.g) - 0.5;\n    if (ch == 2) return float(col.b) - 0.5;\n    if (ch == 3) return float(col.a) - 0.5;\n    if (ch == 4) return (0.299 * float(col.r) + 0.587 * float(col.g) + 0.114 * float(col.b)) - 0.5;\n    if (ch == 5) {\n        float maxC = max(max(float(col.r), float(col.g)), float(col.b));\n        float minC = min(min(float(col.r), float(col.g)), float(col.b));\n        return ((maxC + minC) * 0.5) - 0.5;\n    }\n    return 0.0; // 6 = Off\n}\n\nhalf4 main(float2 fragCoord) {\n    if (abs(MaxHorizontalDisplacement) <= 0.001 && abs(MaxVerticalDisplacement) <= 0.001) {\n        return layer.eval(fragCoord);\n    }\n\n    float2 res = max(resolution, float2(1.0, 1.0));\n    float2 halfRes = res * 0.5;\n\n    // Sample displacement map reference signal at fragCoord\n    // In Cavalry skslFilter, layer samples the current raster state;\n    // When a secondary matte or pre-composite is attached, channels drive the displacement.\n    half4 mapVal = layer.eval(fragCoord);\n\n    int chX = int(floor(HorizontalSourceChannel + 0.5));\n    int chY = int(floor(VerticalSourceChannel + 0.5));\n\n    float shiftX = extractChannel(mapVal, chX) * MaxHorizontalDisplacement;\n    float shiftY = extractChannel(mapVal, chY) * MaxVerticalDisplacement;\n\n    float2 displacedCoord = fragCoord - float2(shiftX, shiftY);\n\n    if (EdgeBehavior > 0.5) {\n        // Wrap Pixels Around\n        float2 norm = (displacedCoord + halfRes) / res;\n        norm = fract(norm);\n        displacedCoord = norm * res - halfRes;\n    } else {\n        // Clamp / discard outside bounding box\n        if (abs(displacedCoord.x) > halfRes.x || abs(displacedCoord.y) > halfRes.y) {\n            return half4(0.0);\n        }\n    }\n\n    return layer.eval(displacedCoord);\n}\n";
+    var SKSL_SOURCE = "// Adobe After Effects \"Displacement Map\" (ADBE Displacement Map)\n// Reconstructed mathematically for Cavalry 2.8+ as a high-performance GPU SkSL Filter (`skslFilter`).\n//\n// Built-in Cavalry preamble uniforms:\n//   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))\n//   `resolution` (float2)   - Layer bounding dimensions in pixels\n\nuniform shader layer;\n\n// Dynamic attribute uniforms (mapped to Cavalry `inputs.0`..`inputs.5`):\nuniform float MaxHorizontalDisplacement; // Maximum horizontal pixel shift (default: 10.0, range: -500.0 to 500.0)\nuniform float MaxVerticalDisplacement;   // Maximum vertical pixel shift (default: 10.0, range: -500.0 to 500.0)\nuniform float HorizontalSourceChannel;  // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance, 5=Lightness, 6=Off\nuniform float VerticalSourceChannel;    // 0=Red, 1=Green, 2=Blue, 3=Alpha, 4=Luminance, 5=Lightness, 6=Off\nuniform float MapBehavior;              // 0=Center Map, 1=Stretch to Fit, 2=Tile Map\nuniform float EdgeBehavior;             // 0=Off (transparent bounds), 1=Wrap Pixels Around\n\nfloat extractChannel(half4 col, int ch) {\n    if (ch == 0) return float(col.r) - 0.5;\n    if (ch == 1) return float(col.g) - 0.5;\n    if (ch == 2) return float(col.b) - 0.5;\n    if (ch == 3) return float(col.a) - 0.5;\n    if (ch == 4) return (0.299 * float(col.r) + 0.587 * float(col.g) + 0.114 * float(col.b)) - 0.5;\n    if (ch == 5) {\n        float maxC = max(max(float(col.r), float(col.g)), float(col.b));\n        float minC = min(min(float(col.r), float(col.g)), float(col.b));\n        return ((maxC + minC) * 0.5) - 0.5;\n    }\n    return 0.0; // 6 = Off\n}\n\nhalf4 main(float2 fragCoord) {\n    if (abs(MaxHorizontalDisplacement) <= 0.001 && abs(MaxVerticalDisplacement) <= 0.001) {\n        return layer.eval(fragCoord);\n    }\n\n    float2 res = max(resolution, float2(1.0, 1.0));\n    float2 halfRes = res * 0.5;\n\n    // Sample the displacement reference signal at fragCoord.\n    // Cavalry's skslFilter is single-input (live-verified in 2.8): a layer connected to\n    // `mattes.0` only masks where the filter applies and never feeds channel data here,\n    // so the signal is derived from the filtered layer itself (AE map-layer approximation).\n    half4 mapVal = layer.eval(fragCoord);\n\n    int chX = int(floor(HorizontalSourceChannel + 0.5));\n    int chY = int(floor(VerticalSourceChannel + 0.5));\n\n    float shiftX = extractChannel(mapVal, chX) * MaxHorizontalDisplacement;\n    float shiftY = extractChannel(mapVal, chY) * MaxVerticalDisplacement;\n\n    float2 displacedCoord = fragCoord - float2(shiftX, shiftY);\n\n    if (EdgeBehavior > 0.5) {\n        // Wrap Pixels Around\n        float2 norm = (displacedCoord + halfRes) / res;\n        norm = fract(norm);\n        displacedCoord = norm * res - halfRes;\n    } else {\n        // Clamp / discard outside bounding box\n        if (abs(displacedCoord.x) > halfRes.x || abs(displacedCoord.y) > halfRes.y) {\n            return half4(0.0);\n        }\n    }\n\n    return layer.eval(displacedCoord);\n}\n";
     /* @@END_SKSL@@ */
 
     var DEFAULTS = {
@@ -25,6 +25,9 @@
         try {
             return fn();
         } catch (err) {
+            if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                console.warn("[AE:Displacement Map]" + ' call failed: ' + (err && err.message ? err.message : err));
+            }
             return fallback;
         }
     }
@@ -185,9 +188,13 @@
         var pad = calculatePadding(params);
         setAttrValue(filterId, 'padding', pad);
 
-        // Optional secondary map source layer connection
+        // Optional secondary map source layer connection.
+        // Cavalry matte semantics (docs + live 2.8 probe): a layer connected to `mattes.0`
+        // constrains WHERE the filter applies; it does not feed channel data into SkSL.
+        // The displacement signal is always derived from the target layer itself.
         var mapSourceId = (rawOptions && (rawOptions.displacementMapLayer || rawOptions.mapLayerId)) || null;
         var mapConnected = false;
+        var warnings = [];
         if (mapSourceId) {
             mapConnected = safeCall(function () {
                 if (typeof api.connect === 'function') {
@@ -195,6 +202,10 @@
                 }
                 return false;
             }, false);
+            warnings.push('Displacement Map Layer was connected to mattes.0, which constrains the region where ' +
+                'the displacement applies (Cavalry filter matte semantics). Cavalry skslFilter cannot sample a ' +
+                'secondary layer, so map channel values do not drive the displacement; the signal is derived ' +
+                'from the target layer itself.');
         }
 
         var connOk = safeCall(function () {
@@ -237,8 +248,84 @@
             padding: pad,
             mapSourceLayer: mapSourceId,
             mapConnected: Boolean(mapConnected),
+            warnings: warnings,
             inspect: inspectPayload
         };
+    }
+
+    // Runner entry (panel / CLI / mock): when executed with __EFFECT_CONFIG__ present,
+    // apply to the current selection and surface a structured summary via __result.
+    if (typeof __EFFECT_CONFIG__ !== 'undefined' && __EFFECT_CONFIG__) {
+        var __entryCfg = __EFFECT_CONFIG__ || {};
+        var __entryParams = __entryCfg.params || {};
+        var __entrySelection = safeCall(function () { return api.getSelection(); }, []) || [];
+        var __entryCreated = false;
+        if (!__entrySelection.length && __entryCfg.createTestTargetIfEmpty) {
+            var __entryTarget = safeCall(function () { return api.primitive('rectangle', 'AE Displacement Map Test Target'); }, null);
+            if (__entryTarget) {
+                safeCall(function () {
+                    api.set(__entryTarget, { 'generator.dimensions': { x: 250, y: 250 } });
+                }, null);
+                safeCall(function () { api.select([__entryTarget]); }, null);
+                __entrySelection = [__entryTarget];
+                __entryCreated = true;
+            }
+        }
+        if (!__entrySelection.length) {
+            var __entryNoSel = {
+                ok: false,
+                partial: false,
+                effect: 'Displacement Map',
+                code: 'NO_SELECTION',
+                error: 'AE Effects [Displacement Map]: No layer selected. Please select one or more layers in Cavalry.',
+                appliedCount: 0,
+                failedCount: 1,
+                warnings: [],
+                results: [],
+                targets: []
+            };
+            try { __result = __entryNoSel; } catch (e) {}
+            if (typeof console !== 'undefined' && console.warn) console.warn(__entryNoSel.error);
+            return __entryNoSel;
+        }
+        var __entryResults = [];
+        for (var __entryIdx = 0; __entryIdx < __entrySelection.length; __entryIdx++) {
+            __entryResults.push(applyDisplacementMap(__entrySelection[__entryIdx], __entryParams));
+        }
+        safeCall(function () { api.select(__entrySelection); }, null);
+
+        var __entryFailed = 0;
+        var __entryWarnings = [];
+        for (var __entryScan = 0; __entryScan < __entryResults.length; __entryScan++) {
+            if (!__entryResults[__entryScan] || __entryResults[__entryScan].status !== 'success') {
+                __entryFailed++;
+            }
+            if (__entryResults[__entryScan] && Array.isArray(__entryResults[__entryScan].warnings)) {
+                __entryWarnings = __entryWarnings.concat(__entryResults[__entryScan].warnings);
+            }
+        }
+        var __entryOk = __entryResults.length > 0 && __entryFailed === 0;
+        var __entryPartial = __entryFailed > 0 && __entryFailed < __entryResults.length;
+        var __entrySummary = {
+            ok: __entryOk,
+            partial: __entryPartial,
+            effect: 'Displacement Map',
+            code: __entryOk ? 'SUCCESS' : (__entryPartial ? 'PARTIAL_SUCCESS' : 'RUNTIME_EXCEPTION'),
+            error: __entryOk ? null : (__entryFailed + ' layer(s) failed'),
+            strategy: 'skslFilter',
+            appliedCount: __entryResults.length - __entryFailed,
+            failedCount: __entryFailed,
+            warnings: __entryWarnings,
+            targets: __entrySelection.slice(),
+            createdTarget: __entryCreated,
+            results: __entryResults,
+            params: __entryParams
+        };
+        try { __result = __entrySummary; } catch (e) {}
+        if (typeof console !== 'undefined' && console.log) {
+            console.log('AE Effects: Applied Displacement Map (skslFilter) to ' + (__entryResults.length - __entryFailed) + ' layer(s)');
+        }
+        return __entrySummary;
     }
 
     if (typeof module !== 'undefined' && module.exports) {

@@ -44,8 +44,11 @@ half4 main(float2 fragCoord) {
     half4 result = baseCol * half(StartingIntensity);
     float currentWeight = StartingIntensity;
 
-    // Procedural multi-stage trail simulation in SkSL
-    // (Native multi-frame temporal caching is handled via scene-graph duplicate rig)
+    // Spatial-trail approximation: AE Echo re-samples prior frames at EchoTime
+    // intervals, but Cavalry's skslFilter evaluates a single-frame raster buffer with
+    // no temporal history (and no duplicate rig is created automatically). The temporal
+    // offset is therefore projected onto a fixed diagonal spatial trail of 60 px/s
+    // horizontally and 30 px/s vertically (heuristic projection, not AE behavior).
     float2 trailOffset = float2(EchoTime * 60.0, EchoTime * 30.0);
 
     for (int i = 1; i <= 16; i++) {

@@ -5,7 +5,7 @@
 - **Date Verified**: 2026-11-13
 - **Live Cavalry Environment**: Cavalry 2.8.1 (Windows) via Stallion HTTP Bridge (`http://127.0.0.1:8080`)
 - **Primary Mechanism**: `skslFilter` (GPU Fragment Shader)
-- **Deployed Script**: `C:\Users\khada\AppData\Roaming\Cavalry\Scripts\AE Effects.js`
+- **Deployed Script**: `%APPDATA%\Cavalry\Scripts\AE Effects.js`
 
 ---
 
@@ -78,7 +78,7 @@ All 4 invariant suites passed with zero failures:
 ## 5. Script Synchronization & Availability
 
 - **Repo Script**: `ae-cavalry-effects/cavalry-script/AE Effects.js`
-- **Cavalry Menu**: `C:\Users\khada\AppData\Roaming\Cavalry\Scripts\AE Effects.js`
+- **Cavalry Menu**: `%APPDATA%\Cavalry\Scripts\AE Effects.js`
 - **Active Verified Effects**:
   1. `Turbulent Displace` (v1.1.0)
   2. `Deep Glow` (v1.0.0)

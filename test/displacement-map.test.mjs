@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 import * as mathModel from '../effects/displacement-map/math-model.mjs';
+import { createMockCavalry } from './lib/mock-cavalry.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EFFECT_DIR = path.join(ROOT, 'effects', 'displacement-map');
@@ -66,50 +67,7 @@ test('Displacement Map — Tier 2: Mathematical invariants (Channel Extraction &
 test('Displacement Map — Tier 3: Headless Mock Stallion execution & secondary layer linking', () => {
     const implSource = fs.readFileSync(path.join(EFFECT_DIR, 'implementation.js'), 'utf8');
 
-    const createdNodes = [];
-    const nodeAttributes = {};
-    const customNames = {};
-    const connections = [];
-
-    const mockApi = {
-        create: (type) => {
-            const id = `${type}_${createdNodes.length + 1}`;
-            createdNodes.push({ id, type });
-            nodeAttributes[id] = ['code', 'padding', 'mattes'];
-            return id;
-        },
-        setName: (id, name) => {},
-        set: (id, payload) => {
-            for (const [k, v] of Object.entries(payload)) {
-                if (!nodeAttributes[id].includes(k)) {
-                    nodeAttributes[id].push(k);
-                }
-                nodeAttributes[id][`_val_${k}`] = v;
-            }
-            return true;
-        },
-        getAttributes: (id) => nodeAttributes[id] || [],
-        addDynamic: (id, group, type) => {
-            let idx = 0;
-            while (nodeAttributes[id].includes(`${group}.${idx}`)) {
-                idx++;
-            }
-            const slot = `${group}.${idx}`;
-            nodeAttributes[id].push(slot);
-            return slot;
-        },
-        renameAttribute: (id, slot, newName) => {
-            customNames[`${id}:${slot}`] = newName;
-            return true;
-        },
-        getCustomAttributeName: (id, slot) => {
-            return customNames[`${id}:${slot}`] || '';
-        },
-        connect: (srcId, srcAttr, dstId, dstAttr) => {
-            connections.push({ srcId, srcAttr, dstId, dstAttr });
-            return true;
-        }
-    };
+    const { api: mockApi, createdNodes, nodeAttributes, customNames, connections } = createMockCavalry({ initialAttrs: ['code', 'padding', 'mattes'] });
 
     const ctx = {
         api: mockApi,
@@ -140,9 +98,13 @@ test('Displacement Map — Tier 3: Headless Mock Stallion execution & secondary 
     assert.equal(result.mapSourceLayer, 'secondary_map_456');
     assert.equal(result.mapConnected, true);
 
-    // Verify secondary map connection was recorded
+    // Verify secondary map connection was recorded (region constraint via mattes —
+    // Cavalry matte semantics; the map's channels cannot drive the displacement)
     const matteConn = connections.find(c => c.srcId === 'secondary_map_456' && c.dstId === result.nodeId);
     assert.ok(matteConn);
+    assert.equal(matteConn.dstAttr, 'mattes.0');
+    assert.ok(Array.isArray(result.warnings) && result.warnings.length === 1);
+    assert.ok(result.warnings[0].includes('cannot sample a'));
 
     assert.ok(result.boundAttributes['MaxHorizontalDisplacement']);
     assert.ok(result.boundAttributes['MaxVerticalDisplacement']);

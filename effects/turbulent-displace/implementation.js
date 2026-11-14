@@ -69,6 +69,9 @@
         try {
             return fn();
         } catch (err) {
+            if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                console.warn("[AE:Turbulent Displace]" + ' call failed: ' + (err && err.message ? err.message : err));
+            }
             return fallback;
         }
     }
@@ -679,6 +682,20 @@
     } finally {
         if (startedUndo && typeof api.endUndoGroup === 'function') {
             api.endUndoGroup();
+        }
+    }
+
+    // Standard dual export shim (module exports for tests/CLI, global for panel runners).
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            apply: applySkslToTarget,
+            normalizeParams: normalizeParams,
+            DEFAULTS: DEFAULTS,
+            SKSL_SOURCE: SKSL_SOURCE
+        };
+    } else {
+        if (typeof globalThis !== 'undefined') {
+            globalThis.AETurbulentDisplace = { apply: applySkslToTarget };
         }
     }
 })();

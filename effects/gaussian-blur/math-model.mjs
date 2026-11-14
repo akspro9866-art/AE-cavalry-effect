@@ -6,8 +6,10 @@
 export const SAMPLE_COUNTS = {
     twoDimensional: {
         center: 1,
-        spiralIterations: 36,
-        totalSamples: 37,
+        spiralIterations: 'tiered: 36 (sigma < 8 px) | 72 (sigma < 40 px) | 144 (sigma >= 40 px)',
+        maxSpiralIterations: 144,
+        totalSamples: 145, // maximum tier (144 spiral taps + center)
+        minTotalSamples: 37,
         distribution: 'Vogel Golden-Spiral Isotropic Disc',
     },
     horizontalOnly: {
@@ -25,6 +27,27 @@ export const SAMPLE_COUNTS = {
         distribution: 'Separable 1D Vertical Gaussian',
     },
 };
+
+/**
+ * 2D Vogel-disc tap tier for a given sigma. The SkSL kernel keeps a constant
+ * loop bound of 144 with a dynamic early-out, so the GPU cost matches this count.
+ * Larger radii get proportionally denser tap rings to avoid visible plateau
+ * banding in the falloff (live-render verified: 36-tap showed ~30 px steps at
+ * sigma 150, 144-tap reduces these ~4x).
+ */
+export const TWO_D_TAP_TIERS = [
+    { maxSigma: 8.0, taps: 36 },
+    { maxSigma: 40.0, taps: 72 },
+    { maxSigma: Infinity, taps: 144 },
+];
+
+export function computeTwoDTapCount(sigma) {
+    const s = Math.max(Number(sigma) || 0, 0.5);
+    for (const tier of TWO_D_TAP_TIERS) {
+        if (s < tier.maxSigma) return tier.taps;
+    }
+    return 144;
+}
 
 /**
  * Computes Gaussian weight according to standard normal bell curve:
@@ -68,10 +91,11 @@ export function computeKernelWeightsSum(blurriness, dimension = 0) {
             totalWeight += 2.0 * w;
         }
     } else {
-        // 2D Isotropic Vogel Disc: 36 spiral taps
+        // 2D Isotropic Vogel Disc: tiered spiral taps (36 / 72 / 144 by sigma)
+        const taps = computeTwoDTapCount(sigma);
         const maxR = sigma * 3.0;
-        for (let i = 0; i < 36; i++) {
-            const r = maxR * Math.sqrt((i + 0.5) / 36.0);
+        for (let i = 0; i < taps; i++) {
+            const r = maxR * Math.sqrt((i + 0.5) / taps);
             const w = Math.exp(-(r * r) / twoSigmaSq);
             totalWeight += w;
         }
@@ -85,11 +109,12 @@ export function computeKernelWeightsSum(blurriness, dimension = 0) {
  */
 export function benchmarkGaussianKernel(width, height, blurriness, dimension = 0) {
     const totalPixels = width * height;
-    const sampleInfo = dimension === 1
-        ? SAMPLE_COUNTS.horizontalOnly
-        : (dimension === 2 ? SAMPLE_COUNTS.verticalOnly : SAMPLE_COUNTS.twoDimensional);
+    const sigma = Math.max(Number(blurriness) * 0.5 || 0, 0.5);
+    const tapsPerPixel = dimension === 1 || dimension === 2
+        ? SAMPLE_COUNTS.horizontalOnly.totalSamples
+        : computeTwoDTapCount(sigma) + 1; // + center tap
 
-    const totalSamples = totalPixels * sampleInfo.totalSamples;
+    const totalSamples = totalPixels * tapsPerPixel;
 
     const t0 = performance.now();
     // Simulate kernel weight computations
@@ -100,7 +125,8 @@ export function benchmarkGaussianKernel(width, height, blurriness, dimension = 0
         resolution: `${width}x${height}`,
         totalPixels,
         dimension,
-        totalTapsPerPixel: sampleInfo.totalSamples,
+        sigma,
+        totalTapsPerPixel: tapsPerPixel,
         totalTextureEvaluations: totalSamples,
         weightSum,
         simulationTimeMs: Number(elapsedMs.toFixed(3)),

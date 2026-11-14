@@ -30,6 +30,9 @@
         try {
             return fn();
         } catch (err) {
+            if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                console.warn("[AE:Glow]" + ' call failed: ' + (err && err.message ? err.message : err));
+            }
             return fallback;
         }
     }
@@ -397,4 +400,20 @@
         console.log('AE Effects: Applied Glow (skslFilter) to ' + results.length + ' layer(s)');
     }
     return summary;
+
+    // Standard dual export shim (module exports for tests/CLI, global for panel runners).
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            apply: applyGlowToLayer,
+            normalizeParams: normalizeParams,
+            calculatePadding: calculatePadding,
+            PARAM_SPECS: PARAM_SPECS,
+            DEFAULTS: DEFAULTS,
+            SKSL_SOURCE: SKSL_SOURCE
+        };
+    } else {
+        if (typeof globalThis !== 'undefined') {
+            globalThis.AEGlow = { apply: applyGlowToLayer };
+        }
+    }
 })();

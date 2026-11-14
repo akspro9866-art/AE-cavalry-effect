@@ -20,8 +20,9 @@ Use **SkSL Filter** (`skslFilter`) when an After Effects effect is an image/pixe
 - Group behavior:
   - Wiring a filter onto a `group` runs the shader per child element in each child's local centered `(0, 0)` bounds. Apply directly to individual drawable layers or unified compounds/precomps when global coordinates across multiple shapes are required.
 - SkSL compilation rules:
-  - Avoid variable names that collide with shader built-ins (`resolution`, `size`). Use a consistent effect prefix (`effAmount`, `tdSize`, etc.).
-  - Prefer branchless SIMD math (`step`, `max`, `clamp`, `float4`) over conditional `if (m > 0.0)` inside noise kernels, avoid array lookups / `sin()` hashes, keep `for` bounds constant (`for (int i = 0; i < MAX; i++)`), and prefer `log(x) / 0.69314718` over `log2(x)`.
+  - Avoid variable names that collide with shader built-ins (`resolution`, `size`). SkSL is case-sensitive, so AE-style unprefixed names (`Size`, `Amount`) are tolerated (and used by shipped effects), but for new effects prefer an effect prefix (`effAmount`, `tdSize`) for anything matching a known built-in case-insensitively (`offset`, `color`, `position`).
+  - Declare exactly ONE `uniform shader` input (`layer`). A second shader uniform compiles but never binds on live Cavalry 2.8 (verified by render probe — see `references/cavalry-api.md`).
+  - Prefer branchless SIMD math (`step`, `max`, `clamp`, `float4`) over conditional `if (m > 0.0)` inside noise kernels, avoid array lookups / `sin()` hashes, keep `for` bounds constant (`for (int i = 0; i < MAX; i++)`; a dynamic early-out `if (i >= activeTaps) break;` inside is fine — see `effects/gaussian-blur`), and prefer `log(x) / 0.69314718` over `log2(x)`.
 
 ## Dual Live + Mock Uniform Binding
 

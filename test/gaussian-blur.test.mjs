@@ -29,10 +29,19 @@ test('Gaussian Blur — Tier 1: Static validation & embedded code sync', () => {
 });
 
 test('Gaussian Blur — Tier 2: Mathematical invariants (Gaussian decay, normalization & sample counts)', () => {
-    // 1. Exact sample counts
-    assert.equal(mathModel.SAMPLE_COUNTS.twoDimensional.totalSamples, 37);
+    // 1. Exact sample counts (2D uses sigma-tiered Vogel taps: 36 / 72 / 144)
+    assert.equal(mathModel.SAMPLE_COUNTS.twoDimensional.maxSpiralIterations, 144);
+    assert.equal(mathModel.SAMPLE_COUNTS.twoDimensional.totalSamples, 145);
     assert.equal(mathModel.SAMPLE_COUNTS.horizontalOnly.totalSamples, 65);
     assert.equal(mathModel.SAMPLE_COUNTS.verticalOnly.totalSamples, 65);
+
+    // 1b. Tap tiering: small sigmas stay cheap, large sigmas densify progressively
+    assert.equal(mathModel.computeTwoDTapCount(0.5), 36);
+    assert.equal(mathModel.computeTwoDTapCount(7.9), 36);
+    assert.equal(mathModel.computeTwoDTapCount(8.0), 72);
+    assert.equal(mathModel.computeTwoDTapCount(39.9), 72);
+    assert.equal(mathModel.computeTwoDTapCount(40.0), 144);
+    assert.equal(mathModel.computeTwoDTapCount(500.0), 144);
 
     // 2. Monotonic Gaussian decay
     const b = 50.0;
@@ -64,16 +73,23 @@ test('Gaussian Blur — Tier 2: Mathematical invariants (Gaussian decay, normali
     const padV = mathModel.computePadding(50.0, 2);
     assert.ok(padV.x === 0 && padV.y > 0, 'Vertical only must zero X padding');
 
-    // 5. Resolution benchmark simulations
+    // 5. Resolution benchmark simulations (blurriness 50 -> sigma 25 -> 72-tap tier)
     const bench256 = mathModel.benchmarkGaussianKernel(256, 256, 50.0, 0);
     const bench512 = mathModel.benchmarkGaussianKernel(512, 512, 50.0, 0);
     const bench1080p = mathModel.benchmarkGaussianKernel(1920, 1080, 50.0, 0);
     const bench4k = mathModel.benchmarkGaussianKernel(3840, 2160, 50.0, 0);
 
-    assert.equal(bench256.totalTapsPerPixel, 37);
-    assert.equal(bench512.totalTextureEvaluations, 512 * 512 * 37);
-    assert.equal(bench1080p.totalTextureEvaluations, 1920 * 1080 * 37);
-    assert.equal(bench4k.totalTextureEvaluations, 3840 * 2160 * 37);
+    assert.equal(bench256.sigma, 25.0);
+    assert.equal(bench256.totalTapsPerPixel, 73);
+    assert.equal(bench512.totalTextureEvaluations, 512 * 512 * 73);
+    assert.equal(bench1080p.totalTextureEvaluations, 1920 * 1080 * 73);
+    assert.equal(bench4k.totalTextureEvaluations, 3840 * 2160 * 73);
+
+    // 5b. Small blurs stay on the cheap 37-tap tier; extreme blurs densify to 145
+    const benchSmall = mathModel.benchmarkGaussianKernel(256, 256, 5.0, 0);
+    assert.equal(benchSmall.totalTapsPerPixel, 37);
+    const benchExtreme = mathModel.benchmarkGaussianKernel(256, 256, 300.0, 0);
+    assert.equal(benchExtreme.totalTapsPerPixel, 145);
 });
 
 test('Gaussian Blur — Tier 3: Headless Mock Stallion execution & dynamic slots', () => {

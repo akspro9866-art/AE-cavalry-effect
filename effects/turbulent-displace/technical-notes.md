@@ -73,4 +73,4 @@
 ## 4. Live Cavalry Verification
 - Verified live against Cavalry 2.8.0 / 2.8.1 runtime on `127.0.0.1:8080`.
 - All 12 dynamic attributes compile cleanly on GPU with zero shader errors.
-- Automatic installation to `Scripts -> AE Effects` (`C:\Users\khada\AppData\Roaming\Cavalry\Scripts\AE Effects.js`) enables single-click application to any selected layer.
+- Automatic installation to `Scripts -> AE Effects` (`%APPDATA%\Cavalry\Scripts\AE Effects.js`) enables single-click application to any selected layer.

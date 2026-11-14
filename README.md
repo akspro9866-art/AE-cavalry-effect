@@ -1,6 +1,6 @@
 # AE Effects for Cavalry (`ae-effects-cavalry`)
 
-[![Tests](https://img.shields.io/badge/tests-117%2F117%20passing-brightgreen.svg)](test/)
+[![Tests](https://img.shields.io/badge/tests-126%2F126%20passing-brightgreen.svg)](test/)
 [![Cavalry](https://img.shields.io/badge/Cavalry-2.8%2B-blue.svg)](https://cavalry.scenery.io/)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![GPU](https://img.shields.io/badge/GPU-SkSL%20Accelerated-orange.svg)](effects/)
@@ -45,7 +45,7 @@ All 35 effects are mathematically reconstructed and verified against native Afte
 | **Turbulent Displace** | Distort | `skslFilter` / Deformer | `ADBE Turbulent Displace` | 9 Displacement algorithms; 4D Simplex vector displacement noise; boundary edge pinning; cycle evolution. | Live Verified |
 | **CC RepeTile** | Distort | `skslFilter` | `ADBE CC RepeTile` | 6 Tiling algorithms: Repeat, Flip ping-pong, Checker, Brick 50%, Fold, Unfold; dynamic padding. | Live Verified |
 | **Motion Tile** | Stylize | `skslFilter` | `ADBE Tile` | 2D coordinate wrapping, output expansion percentage boundaries, alternating mirror edges, row phase stagger. | Mock Tested |
-| **Displacement Map** | Distort | `skslFilter` | `ADBE Displacement Map` | Channel-selective coordinate deflection (R, G, B, A, Luma, Lightness); secondary map layer linking via `mattes`. | Mock Tested |
+| **Displacement Map** | Distort | `skslFilter` | `ADBE Displacement Map` | Channel-selective coordinate deflection (R, G, B, A, Luma, Lightness); optional map layer constrains filter region via `mattes` (channel sampling unsupported by `skslFilter`). | Mock Tested |
 | **CC Kaleida** | Stylize | `skslFilter` | `CC Kaleida` | Polar coordinate radial wedge decomposition; $C^0/C^1$ bilateral reflection eliminating sector seams. | Mock Tested |
 | **Optics Compensation** | Distort | `skslFilter` | `ADBE Optics Compensation` | Spherical tangent radial lens warping; reversible barrel/pincushion projection; optical center shift. | Mock Tested |
 | **Venetian Blinds** | Transition | `skslFilter` | `ADBE Venetian Blinds` | Periodic linear stripe partitioning; directional angle projection; smoothstep edge feathering. | Mock Tested |
@@ -62,8 +62,8 @@ All 35 effects are mathematically reconstructed and verified against native Afte
 | **Null Object** | Composition | `null` | `ADBE Null Object` | Procedural centroid bounding-box calculation from multi-layer selection; automatic layer parenting. | Live Verified |
 | **Adjustment Layer** | Composition | `group` | `ADBE Adjustment Layer` | Native composite group encapsulating selected layers; attached SkSL adjustment filter pipeline. | Live Verified |
 | **Pre-Compose** | Composition | `compositionReference` | `ADBE Pre-Compose` | Encapsulates selected layers into a nested composition asset; replaces selection with reference node. | Live Verified |
-| **Echo** | Time | `skslFilter` / Rig | `ADBE Echo` | Add, Maximum, Minimum, Screen, Composite, and Behind blending operators; intensity decay. | Approximation |
-| **Time Displacement** | Time | `skslFilter` / Graph | `ADBE Time Displacement` | Channel luminance mapping; temporal quantizing steps; spatial phase latency projection; matte linking. | Approximation |
+| **Echo** | Time | `skslFilter` / Rig | `ADBE Echo` | Fixed diagonal spatial trail projection of Echo Time (no temporal sampling in `skslFilter`); Add, Maximum, Minimum, Screen, Composite, and Behind blending operators; intensity decay. | Approximation |
+| **Time Displacement** | Time | `skslFilter` / Graph | `ADBE Time Displacement` | Channel luminance mapping; temporal quantizing steps; spatial phase latency projection (AE map layer not sampleable by `skslFilter` — self-signal approximation). | Approximation |
 
 ---
 
@@ -90,7 +90,7 @@ Every effect in this library is governed by a strict five-tier verification prot
 ### Running Tests Locally
 
 ```bash
-# Run the complete test suite (117 unit tests, zero external dependencies):
+# Run the complete test suite (126 tests, zero external dependencies):
 npm test
 
 # Verify all synchronizers and embedded codes are in sync:

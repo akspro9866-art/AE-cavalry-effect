@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 import * as mathModel from '../effects/time-displacement/math-model.mjs';
+import { createMockCavalry } from './lib/mock-cavalry.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EFFECT_DIR = path.join(ROOT, 'effects', 'time-displacement');
@@ -55,53 +56,10 @@ test('Time Displacement — Tier 2: Mathematical invariants (Channel & Time Delt
     assert.equal(dtQuant, 0.2);
 });
 
-test('Time Displacement — Tier 3: Headless Mock Stallion execution & secondary map linking', () => {
+test('Time Displacement — Tier 3: Headless Mock Stallion execution & secondary map limitation warning', () => {
     const implSource = fs.readFileSync(path.join(EFFECT_DIR, 'implementation.js'), 'utf8');
 
-    const createdNodes = [];
-    const nodeAttributes = {};
-    const customNames = {};
-    const connections = [];
-
-    const mockApi = {
-        create: (type) => {
-            const id = `${type}_${createdNodes.length + 1}`;
-            createdNodes.push({ id, type });
-            nodeAttributes[id] = ['code', 'padding', 'mattes'];
-            return id;
-        },
-        setName: (id, name) => {},
-        set: (id, payload) => {
-            for (const [k, v] of Object.entries(payload)) {
-                if (!nodeAttributes[id].includes(k)) {
-                    nodeAttributes[id].push(k);
-                }
-                nodeAttributes[id][`_val_${k}`] = v;
-            }
-            return true;
-        },
-        getAttributes: (id) => nodeAttributes[id] || [],
-        addDynamic: (id, group, type) => {
-            let idx = 0;
-            while (nodeAttributes[id].includes(`${group}.${idx}`)) {
-                idx++;
-            }
-            const slot = `${group}.${idx}`;
-            nodeAttributes[id].push(slot);
-            return slot;
-        },
-        renameAttribute: (id, slot, newName) => {
-            customNames[`${id}:${slot}`] = newName;
-            return true;
-        },
-        getCustomAttributeName: (id, slot) => {
-            return customNames[`${id}:${slot}`] || '';
-        },
-        connect: (srcId, srcAttr, dstId, dstAttr) => {
-            connections.push({ srcId, srcAttr, dstId, dstAttr });
-            return true;
-        }
-    };
+    const { api: mockApi, createdNodes, nodeAttributes, customNames, connections } = createMockCavalry({ initialAttrs: ['code', 'padding', 'mattes'] });
 
     const ctx = {
         api: mockApi,
@@ -128,7 +86,14 @@ test('Time Displacement — Tier 3: Headless Mock Stallion execution & secondary
     assert.equal(result.connected, true);
     assert.equal(result.codeConfigured, true);
     assert.equal(result.timeDisplacementLayer, 'map_layer_999');
-    assert.equal(result.mapConnected, true);
+    // Cavalry's skslFilter has no second image input (live-verified in 2.8): the map
+    // layer must NOT be linked to mattes.0 (that would only mask the filter region),
+    // and the limitation must be surfaced as a warning instead of silently ignored.
+    assert.equal(result.mapConnected, false);
+    const mattesConnections = connections.filter((c) => c.dstAttr.indexOf('mattes') === 0);
+    assert.equal(mattesConnections.length, 0);
+    assert.ok(Array.isArray(result.warnings) && result.warnings.length === 1);
+    assert.ok(result.warnings[0].includes('cannot sample a secondary layer'));
 
     assert.ok(result.boundAttributes['MaxDisplacementTime']);
     assert.ok(result.boundAttributes['TimeResolution']);

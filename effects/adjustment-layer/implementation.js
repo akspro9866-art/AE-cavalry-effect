@@ -16,6 +16,9 @@
         try {
             return fn();
         } catch (err) {
+            if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                console.warn("[AE:Adjustment Layer]" + ' call failed: ' + (err && err.message ? err.message : err));
+            }
             return fallback;
         }
     }
@@ -106,7 +109,7 @@
 
     // Attach SkSL Filter to group's filters port
     var filterId = safeCall(function () { return api.create('skslFilter', TAG_FILTER + ' ' + count); }, null);
-    var filterCode = 
+    var filterCode =
         'uniform float Exposure;\n' +
         'uniform float Contrast;\n' +
         'half4 main(float2 fragCoord) {\n' +

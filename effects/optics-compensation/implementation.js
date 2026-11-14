@@ -23,6 +23,9 @@
         try {
             return fn();
         } catch (err) {
+            if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                console.warn("[AE:Optics Compensation]" + ' call failed: ' + (err && err.message ? err.message : err));
+            }
             return fallback;
         }
     }
@@ -213,6 +216,81 @@
             parameters: params,
             inspect: inspectPayload
         };
+    }
+
+    // Runner entry (panel / CLI / mock): when executed with __EFFECT_CONFIG__ present,
+    // apply to the current selection and surface a structured summary via __result.
+    if (typeof __EFFECT_CONFIG__ !== 'undefined' && __EFFECT_CONFIG__) {
+        var __entryCfg = __EFFECT_CONFIG__ || {};
+        var __entryParams = __entryCfg.params || {};
+        var __entrySelection = safeCall(function () { return api.getSelection(); }, []) || [];
+        var __entryCreated = false;
+        if (!__entrySelection.length && __entryCfg.createTestTargetIfEmpty) {
+            var __entryTarget = safeCall(function () { return api.primitive('rectangle', 'AE Optics Compensation Test Target'); }, null);
+            if (__entryTarget) {
+                safeCall(function () {
+                    api.set(__entryTarget, { 'generator.dimensions': { x: 250, y: 250 } });
+                }, null);
+                safeCall(function () { api.select([__entryTarget]); }, null);
+                __entrySelection = [__entryTarget];
+                __entryCreated = true;
+            }
+        }
+        if (!__entrySelection.length) {
+            var __entryNoSel = {
+                ok: false,
+                partial: false,
+                effect: 'Optics Compensation',
+                code: 'NO_SELECTION',
+                error: 'AE Effects [Optics Compensation]: No layer selected. Please select one or more layers in Cavalry.',
+                appliedCount: 0,
+                failedCount: 1,
+                warnings: [],
+                results: [],
+                targets: []
+            };
+            try { __result = __entryNoSel; } catch (e) {}
+            if (typeof console !== 'undefined' && console.warn) console.warn(__entryNoSel.error);
+            return __entryNoSel;
+        }
+        var __entryResults = [];
+        for (var __entryIdx = 0; __entryIdx < __entrySelection.length; __entryIdx++) {
+            __entryResults.push(applyOpticsCompensation(__entrySelection[__entryIdx], __entryParams));
+        }
+        safeCall(function () { api.select(__entrySelection); }, null);
+
+        var __entryFailed = 0;
+        var __entryWarnings = [];
+        for (var __entryScan = 0; __entryScan < __entryResults.length; __entryScan++) {
+            if (!__entryResults[__entryScan] || __entryResults[__entryScan].status !== 'success') {
+                __entryFailed++;
+            }
+            if (__entryResults[__entryScan] && Array.isArray(__entryResults[__entryScan].warnings)) {
+                __entryWarnings = __entryWarnings.concat(__entryResults[__entryScan].warnings);
+            }
+        }
+        var __entryOk = __entryResults.length > 0 && __entryFailed === 0;
+        var __entryPartial = __entryFailed > 0 && __entryFailed < __entryResults.length;
+        var __entrySummary = {
+            ok: __entryOk,
+            partial: __entryPartial,
+            effect: 'Optics Compensation',
+            code: __entryOk ? 'SUCCESS' : (__entryPartial ? 'PARTIAL_SUCCESS' : 'RUNTIME_EXCEPTION'),
+            error: __entryOk ? null : (__entryFailed + ' layer(s) failed'),
+            strategy: 'skslFilter',
+            appliedCount: __entryResults.length - __entryFailed,
+            failedCount: __entryFailed,
+            warnings: __entryWarnings,
+            targets: __entrySelection.slice(),
+            createdTarget: __entryCreated,
+            results: __entryResults,
+            params: __entryParams
+        };
+        try { __result = __entrySummary; } catch (e) {}
+        if (typeof console !== 'undefined' && console.log) {
+            console.log('AE Effects: Applied Optics Compensation (skslFilter) to ' + (__entryResults.length - __entryFailed) + ' layer(s)');
+        }
+        return __entrySummary;
     }
 
     if (typeof module !== 'undefined' && module.exports) {

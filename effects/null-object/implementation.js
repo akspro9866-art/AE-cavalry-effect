@@ -15,6 +15,9 @@
         try {
             return fn();
         } catch (err) {
+            if (typeof globalThis !== 'undefined' && globalThis.AE_EFFECTS_DEBUG && typeof console !== 'undefined' && console.warn) {
+                console.warn("[AE:Null]" + ' call failed: ' + (err && err.message ? err.message : err));
+            }
             return fallback;
         }
     }

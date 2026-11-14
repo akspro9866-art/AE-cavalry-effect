@@ -16,4 +16,4 @@ $$\Delta y = v(ch_y) \times \text{MaxVerticalDisplacement}$$
 $$\mathbf{p}' = \mathbf{p} - (\Delta x, \Delta y)$$
 
 ## Cavalry Architecture
-Cavalry 2.8's `skslFilter` evaluates on the target layer's raster buffer. When a secondary displacement source layer is specified, the applicator links the source via `api.connect(mapSourceId, 'id', filterId, 'mattes.0')` to pass the external reference into the composite pipeline.
+Cavalry 2.8's `skslFilter` evaluates on the target layer's raster buffer. When a secondary displacement source layer is specified, the applicator links the source via `api.connect(mapSourceId, 'id', filterId, 'mattes.0')`. Per Cavalry's filter matte semantics (and a live 2.8 probe, 2026-11), this **constrains the region where the filter applies only** — `mattes` connections and shader-type `inputs.*` dynamics do not bind layer content into the SkSL code. AE's map-channel-driven displacement therefore cannot be reproduced with a single `skslFilter`; the displacement signal is derived from the target layer itself, and the applicator returns an explicit warning documenting this whenever a map layer is connected.

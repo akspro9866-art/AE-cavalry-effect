@@ -37,9 +37,10 @@ half4 main(float2 fragCoord) {
     float2 res = max(resolution, float2(1.0, 1.0));
     float2 halfRes = res * 0.5;
 
-    // Sample displacement map reference signal at fragCoord
-    // In Cavalry skslFilter, layer samples the current raster state;
-    // When a secondary matte or pre-composite is attached, channels drive the displacement.
+    // Sample the displacement reference signal at fragCoord.
+    // Cavalry's skslFilter is single-input (live-verified in 2.8): a layer connected to
+    // `mattes.0` only masks where the filter applies and never feeds channel data here,
+    // so the signal is derived from the filtered layer itself (AE map-layer approximation).
     half4 mapVal = layer.eval(fragCoord);
 
     int chX = int(floor(HorizontalSourceChannel + 0.5));

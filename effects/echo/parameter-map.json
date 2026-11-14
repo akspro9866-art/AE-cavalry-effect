@@ -3,7 +3,7 @@
   "aeName": "Echo",
   "aeMatchName": "ADBE Echo",
   "aeCategory": "Time",
-  "provenanceNote": "Reconstructs Adobe After Effects Echo (ADBE Echo) using temporal duplicate scene-graph hierarchies with time offsetting and multi-stage blending operators (Add, Screen, Maximum, Minimum, Composite).",
+  "provenanceNote": "Approximates Adobe After Effects Echo (ADBE Echo) as a single-pass SkSL spatial trail: Cavalry's skslFilter has no temporal frame history, so the EchoTime offset is projected onto a fixed diagonal spatial smear (60/30 px per second) with geometric decay and multi-stage blending operators (Add, Screen, Maximum, Minimum, Composite). For authentic temporal echoing, use a layer-duplicate rig with time offsets.",
   "parameters": [
     {
       "id": "EchoTime",

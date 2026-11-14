@@ -67,12 +67,19 @@ half4 main(float2 fragCoord) {
             totalWeight += 2.0 * w;
         }
     } else {
-        // 0 = Horizontal and Vertical (36-tap Vogel Golden-Spiral Isotropic Gaussian Kernel)
-        // Uniform 2D disc dispersion without concentric ring artifacts
+        // 0 = Horizontal and Vertical (Vogel Golden-Spiral Isotropic Gaussian Kernel)
+        // Uniform 2D disc dispersion without concentric ring artifacts.
+        // Tap count scales with sigma in three tiers (constant loop bound with a
+        // dynamic early-out, matching Turbulent Displace's live-verified pattern)
+        // so large radii stay densely sampled instead of banding: 36 taps keep
+        // small blurs cheap, 72 serve mid-range, and 144 halve the sample spacing
+        // again for sigma >= 40 px (Blurriness >= 80) where sparse rings plateau.
         float maxR = sigma * 3.0;
-        for (int i = 0; i < 36; i++) {
+        int activeTaps = (sigma < 8.0) ? 36 : ((sigma < 40.0) ? 72 : 144);
+        for (int i = 0; i < 144; i++) {
+            if (i >= activeTaps) break;
             float fi = float(i);
-            float r = maxR * sqrt((fi + 0.5) / 36.0);
+            float r = maxR * sqrt((fi + 0.5) / float(activeTaps));
             float phi = fi * 2.39996323; // Golden angle in radians
             float2 offset = float2(cos(phi), sin(phi)) * r;
 

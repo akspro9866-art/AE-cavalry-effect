@@ -13,6 +13,7 @@ Composite operators:
 - **Composite (Over)**: Standard painter's algorithm $\mathbf{C}_k \text{ over } \mathbf{C}_{k+1}$.
 
 ## Cavalry Runtime Limitation & Architectural Notes
-GPU SkSL in Cavalry evaluates single-frame raster buffers (`layer.eval(fragCoord)`) and does not possess multi-frame ring buffers or temporal frame history. 
-To achieve authentic temporal echoing across animated shapes/transforms in Cavalry, the procedural duplicate rig (layer duplicates with `timeOffset` / `inFrame` shifts and opacity decay) is recommended. The SkSL implementation provides high-speed procedural trailing and accumulation blending.
+GPU SkSL in Cavalry evaluates single-frame raster buffers (`layer.eval(fragCoord)`) and does not possess multi-frame ring buffers or temporal frame history.
+The shipped SkSL filter therefore does **not** sample prior frames: it projects `EchoTime` onto a fixed diagonal spatial trail (60 px/s horizontally, 30 px/s vertically) with geometric decay, then applies the selected blending operator. No scene-graph duplicate rig is created automatically.
+To achieve authentic temporal echoing across animated shapes/transforms in Cavalry, build a duplicate rig manually (layer duplicates with `timeOffset` / `inFrame` shifts and opacity decay) and skip this filter.
 Status: `approximation` / `mock-tested`.

@@ -1,6 +1,12 @@
 // Adobe After Effects "Time Displacement" (ADBE Time Displacement)
 // Reconstructed mathematically for Cavalry 2.8+ as a procedural GPU SkSL Filter (`skslFilter`).
 //
+// Approximation note: AE samples a secondary "Time Displacement Layer" per fragment.
+// Cavalry's skslFilter is single-input (verified live in 2.8: mattes.0 connections and
+// shader-type inputs.* dynamics do not bind layer content into SkSL), so the displacement
+// signal is derived from the filtered layer itself and the temporal delay is projected
+// as spatial phase latency (slit-scan).
+//
 // Built-in Cavalry preamble uniforms:
 //   `layer` (uniform shader) - Source layer texture sampler (layer.eval(coords))
 //   `resolution` (float2)   - Layer bounding dimensions in pixels

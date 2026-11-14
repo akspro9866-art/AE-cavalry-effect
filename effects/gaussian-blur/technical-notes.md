@@ -13,13 +13,21 @@ In Cavalry 2.8+, Gaussian Blur is implemented as a GPU-accelerated SkSL Filter (
 1. **Gaussian Weight Distribution**:
    For any tap at spatial distance $d$ from the target fragment with standard deviation $\sigma$:
    $$w(d) = \exp\left( -\frac{d^2}{2\sigma^2} \right)$$
-   Where $\sigma = \max(\text{Blurriness} / 3.0, \; 0.001)$.
+   Where $\sigma = \max(\text{Blurriness} \times 0.5, \; 0.5)$.
 
-2. **2D Vogel Golden-Spiral Kernel**:
+2. **2D Vogel Golden-Spiral Kernel (sigma-tiered)**:
    To eliminate directional banding artifacts in single-pass 2D filtering without requiring separable multi-pass framebuffers:
    $$r_i = 3\sigma \sqrt{\frac{i + 0.5}{N}}, \quad \theta_i = i \cdot 2.3999632 \text{ rad}$$
    $$\Delta \mathbf{x}_i = \left( r_i \cos \theta_i, \; r_i \sin \theta_i \right)$$
-   Where $N = 37$ taps.
+   The tap count $N$ scales with sigma in three tiers so large radii stay densely sampled instead of plateau-banding (constant GPU loop bound of 144 with a dynamic early-out, a pattern live-verified via Turbulent Displace):
+
+   | Tier | $\sigma$ range | Taps (incl. center) |
+   | :--- | :--- | :--- |
+   | Small | $\sigma < 8$ px | 37 |
+   | Medium | $8 \le \sigma < 40$ px | 73 |
+   | Large | $\sigma \ge 40$ px | 145 |
+
+   Live-render verification (2026-11, 960×540 comp, $\sigma = 75$): the 145-tap tier renders a smooth falloff (mean adjacent-pixel delta 0.36 luma, no reversals). Mild residual banding can remain at extreme blurs ($\text{Blurriness} \gtrsim 400$); for axis-aligned blurs the 1D modes sample $3\sigma$ with 65 taps and remain the smoothest option.
 
 3. **1D Directional Kernels**:
    When `Blur Dimensions` is set to Horizontal Only (`1`) or Vertical Only (`2`):
@@ -49,7 +57,7 @@ In Cavalry 2.8+, Gaussian Blur is implemented as a GPU-accelerated SkSL Filter (
 
 | Feature | Adobe After Effects | Cavalry 2.8+ (This Implementation) |
 | :--- | :--- | :--- |
-| **Convolution Pipeline** | Multi-pass separable IIR or FIR buffer ping-pong | Single-pass GPU SkSL with 37-tap Vogel spiral / 65-tap 1D separable kernel |
+| **Convolution Pipeline** | Multi-pass separable IIR or FIR buffer ping-pong | Single-pass GPU SkSL with sigma-tiered 37/73/145-tap Vogel spiral / 65-tap 1D separable kernel |
 | **Edge Behavior** | Toggleable "Repeat Edge Pixels" | Native bounding clamp integrated into fragment shader |
 | **Color Precision** | 8/16/32-bpc project setting | Native 32-bit floating-point per fragment |
 
