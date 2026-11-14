@@ -1,6 +1,10 @@
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
+const LIB_ROOT = resolveProjectRoot();
+
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
 
 async function main() {
   const { runScriptWithResult, runBatchStep, loadConfig } = await import(CAVALRY_MCP_STALLION);
@@ -32,7 +36,7 @@ async function main() {
     script: '/* probe */',
     sampleFrames: [0],
     renderFrames: true,
-    renderOutputDir: 'C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects/artifacts/probe-test'
+    renderOutputDir: LIB_ROOT + '/artifacts/probe-test'
   }, cfg);
 
   // Clean up

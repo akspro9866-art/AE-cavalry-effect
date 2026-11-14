@@ -33,8 +33,10 @@ The repository is intentionally architected with **zero third-party npm producti
 
 | Command | Action |
 | :--- | :--- |
-| `npm test` | Runs the full unit test suite (42 tests across static, mathematical, mock, config, and agent tiers) |
+| `npm test` | Runs the full unit test suite (126 tests across static, mathematical, mock, bundled-runner, visual-diff, config, and agent tiers) |
 | `npm run check` | Validates that embedded shaders, agent configs, and compiled Cavalry scripts are completely in sync |
+| `npm run lint` | Zero-dependency repository lint: hardcoded personal paths, tabs, trailing whitespace, stray debuggers |
+| `npm run coverage` | Test suite with Node's built-in code coverage report (`node --test --experimental-test-coverage`) |
 | `npm run sync:embedded` | Inlines raw `.sksl` and `.deformer.js` sources into each effect's `implementation.js` |
 | `npm run sync:script` | Compiles the standalone zero-dependency Cavalry distribution script (`cavalry-script/AE Effects.js`) and deploys to local Cavalry Scripts folder if present |
 | `npm run sync:agents` | Synchronizes prompt definitions and skills across Qoder, ZCode, OpenCode, Antigravity, and Cursor from canonical templates |
@@ -93,12 +95,13 @@ To add a new After Effects reconstruction:
    Create `test/<slug>.test.mjs` verifying:
    - Tier 1: Static schema and bracket balance.
    - Tier 2: Mathematical invariants and boundary conditions.
-   - Tier 3: Headless Mock Stallion execution and dynamic slot provisioning.
+   - Tier 3: Headless mock execution and dynamic slot provisioning (use the shared harness in `test/lib/mock-cavalry.mjs`; do not define inline mocks).
 
 5. **Run Verification**:
    ```bash
    npm test
    npm run check
+   npm run lint
    ```
 
 6. **Live Cavalry Verification (Optional/Recommended)**:
@@ -111,7 +114,9 @@ To add a new After Effects reconstruction:
 
 ## 6. Code Style & Verification Discipline
 
-- **No Undocumented APIs**: Only use documented Cavalry 2.8+ JavaScript APIs (`api.create()`, `api.connect()`, `api.parent()`, `api.getParent()`, `api.getSelection()`, `api.set()`, `api.addDynamicAttribute()`).
+- **No Undocumented APIs**: Only use documented Cavalry 2.8+ JavaScript APIs (`api.create()`, `api.connect()`, `api.parent()`, `api.getParent()`, `api.getSelection()`, `api.set()`, `api.addDynamic()`).
 - **Idempotency**: Applying an effect multiple times must cleanly update existing dynamic attributes without duplicating nodes or corrupting connections.
 - **Strict Return Schema**: Every implementation must return a structured result object matching `scripts/lib/effect-runtime.mjs`.
+- **Runner Entry Block**: Every `implementation.js` must execute its `apply…` function at IIFE top level when `__EFFECT_CONFIG__` is defined (see any shipped effect). Without it, the panel button and the CLI mock mode are silent no-ops — `test/bundled-runners.test.mjs` enforces this for all bundled runners.
+- **Debug Logging**: Applicators fail soft via `safeCall`. Set `globalThis.AE_EFFECTS_DEBUG = true` (e.g. from the Cavalry console) to surface every suppressed error through `console.warn` with the effect's `[AE:<Name>]` tag.
 - **Cleanroom Implementation**: Reconstruct mathematics from published graphics literature and analytical formulas. Never include proprietary binaries or decompiled code.

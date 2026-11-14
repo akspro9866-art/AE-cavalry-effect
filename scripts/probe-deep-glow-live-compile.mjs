@@ -1,13 +1,17 @@
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 import fs from 'node:fs';
 
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
+const LIB_ROOT = resolveProjectRoot();
+
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
 
 async function main() {
   const { runScriptWithResult, runBatchStep, loadConfig } = await import(CAVALRY_MCP_STALLION);
   const cfg = loadConfig();
 
-  const skslSource = fs.readFileSync('C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects/effects/deep-glow/deep-glow.sksl', 'utf8');
+  const skslSource = fs.readFileSync(LIB_ROOT + '/effects/deep-glow/deep-glow.sksl', 'utf8');
 
   // Strip uniform declarations that Cavalry's dynamic inputs inject
   const liveCode = skslSource.replace(/^\s*uniform\s+(?:float|float2|half4|bool)\s+[A-Za-z0-9_]+\s*;\s*(?:\r?\n)?/gm, '');
@@ -71,7 +75,7 @@ async function main() {
     script: '/* render deep glow test frame */',
     sampleFrames: [0],
     renderFrames: true,
-    renderOutputDir: 'C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects/artifacts/deep-glow-test'
+    renderOutputDir: LIB_ROOT + '/artifacts/deep-glow-test'
   }, cfg);
   console.log('LIVE RENDER STEP STATUS:', step.ok);
 

@@ -5,7 +5,7 @@ description: Automatically converts Adobe After Effects effect names into mathem
 
 # After Effects → Cavalry Effect Engineer
 
-Convert any Adobe After Effects effect name into a mathematically faithful, reusable, one-action Cavalry implementation using the existing `cavalry-mcp` (`C:/Users/khada/cavalry-mcp`), `stallion` (`C:/Users/khada/stallion`), and `ae-cavalry-effects` library (`C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects`).
+Convert any Adobe After Effects effect name into a mathematically faithful, reusable, one-action Cavalry implementation using the existing `cavalry-mcp` (`<cavalry-mcp-install>`), `stallion` (`<stallion-install>`), and `ae-cavalry-effects` library (`<library-root>`).
 
 Never rebuild `stallion` or `cavalry-mcp`. Never invent Cavalry APIs or Adobe proprietary claims. Never report mocked runs as live visual proof.
 
@@ -13,7 +13,7 @@ Never rebuild `stallion` or `cavalry-mcp`. Never invent Cavalry APIs or Adobe pr
 
 When the user asks to create, convert, improve, or apply an After Effects effect (e.g., *"Create After Effects Turbulent Displace"*, *"Convert AE Repeater to Cavalry"*):
 
-1. Normalize the effect name to `<slug>` and check `C:\Users\khada\.gemini\antigravity\scratch\ae-cavalry-effects\effect-registry.json`.
+1. Normalize the effect name to `<slug>` and check `<library-root>\effect-registry.json`.
 2. **If `<slug>` exists and is verified**: inspect `effects/<slug>/` first. If the user only asked to apply it or use it, run `implementation.js` (or `node scripts/apply-effect.mjs <slug>`) directly against the current Cavalry selection. Do **not** regenerate or overwrite a verified implementation unnecessarily. Version increments (`v1` -> `v2`) must preserve the previous verified working version.
 3. **If `<slug>` is new**: run the 7-phase engineering pipeline below without asking the user to repeat instructions.
 
@@ -38,20 +38,20 @@ Research thoroughly before coding. Follow [references/effect-research-checklist.
 Consult [references/implementation-strategies.md](references/implementation-strategies.md):
 
 - Evaluate: Native Cavalry Nodes -> Procedural `_mg` Rig -> `skslFilter` -> `javaScriptDeformer` -> `javaScript` / `javaScriptModifier` -> `javaScriptShape` -> Hybrid.
-- Verify every Cavalry node type and attribute against `C:/Users/khada/cavalry-mcp/data/api_reference.json`, `node_modules/@scenery/cavalry-types`, or live `cavalry_probe_api`.
+- Verify every Cavalry node type and attribute against `<cavalry-mcp-install>/data/api_reference.json`, `node_modules/@scenery/cavalry-types`, or live `cavalry_probe_api`.
 - Never use `uniform int` or `uniform bool` in `skslFilter` (use `uniform float`), never put `= value` on SkSL uniforms, and handle live `skslFilter` scripted uniform limitations with a clean runtime probe + constant-baking fallback when needed.
 - Never reference `api`, `ui`, `render`, `plugin`, or `install` inside `javaScriptDeformer` (`deformer` context allows ONLY `console`, `ctx`, `cavalry`, `def`).
 
 ### Phase 4 — Author Package Under `effects/<slug>/`
 
-Create or update `C:\Users\khada\.gemini\antigravity\scratch\ae-cavalry-effects\effects\<slug>\` with:
+Create or update `<library-root>\effects\<slug>\` with:
 
 - `SKILL.md` — effect-specific usage, parameters, mode choice, and limitations.
 - `README.md` — quick reference and parameter guide.
 - `parameter-map.json` — AE matchNames/defaults mapped to Cavalry attributes/ranges.
 - `technical-notes.md` — math derivation, coordinate space, fidelity comparison, and known gaps.
 - Primary implementation file(s) (`<slug>.sksl`, `<slug>.deformer.js`, or rig script) plus `implementation.js` (selection-aware idempotent applicator returning `{ ok, applied, ... }`).
-- Start from `C:\Users\khada\.gemini\antigravity\scratch\ae-cavalry-effects\templates\`.
+- Start from `<library-root>\templates\`.
 
 ### Phase 5 — One-Action Selection-Preserving Application
 
@@ -75,6 +75,6 @@ Follow [references/verification-protocol.md](references/verification-protocol.md
 
 ### Phase 7 — Update Registry, Sync Cavalry `AE Effects` Script & Report
 
-- Update `C:\Users\khada\.gemini\antigravity\scratch\ae-cavalry-effects\effect-registry.json` with version, status, implementation type, and verification state (`mock-verified` vs `live-verified`).
-- Run `node C:\Users\khada\.gemini\antigravity\scratch\ae-cavalry-effects\scripts\sync-cavalry-script.mjs` (automatically executed by `scripts/verify-effect.mjs`) to rebuild `cavalry-script/AE Effects.js` and deploy it directly to Cavalry's Scripts folder (`Scripts -> AE Effects`) so the user can immediately 1-click the new effect on any selected layer while editing in Cavalry (clicking `Refresh` or selecting a layer hot-reloads an already-open panel via `effect-registry.json`).
+- Update `<library-root>\effect-registry.json` with version, status, implementation type, and verification state (`mock-verified` vs `live-verified`).
+- Run `node <library-root>\scripts\sync-cavalry-script.mjs` (automatically executed by `scripts/verify-effect.mjs`) to rebuild `cavalry-script/AE Effects.js` and deploy it directly to Cavalry's Scripts folder (`Scripts -> AE Effects`) so the user can immediately 1-click the new effect on any selected layer while editing in Cavalry (clicking `Refresh` or selecting a layer hot-reloads an already-open panel via `effect-registry.json`).
 - Write `effects/<slug>/test-report.md` summarizing actual commands executed, pass/fail counts, mathematical fidelity notes, and any AE-to-Cavalry divergences.

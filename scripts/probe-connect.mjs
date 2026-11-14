@@ -1,6 +1,10 @@
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
+const LIB_ROOT = resolveProjectRoot();
+
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
 
 async function main() {
   const { runScriptWithResult, loadConfig } = await import(CAVALRY_MCP_STALLION);
@@ -13,7 +17,7 @@ async function main() {
   var filter = api.create('skslFilter', comp);
   api.setName(filter, 'Deep Glow Test');
   api.connect(filter, 'id', rect, 'filters');
-  
+
   var conn1 = api.getConnected(rect, 'filters');
   var conn2 = api.getConnected(filter, 'id');
   var type1 = typeof api.getType === 'function' ? api.getType(filter) : 'no getType';

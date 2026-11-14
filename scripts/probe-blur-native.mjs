@@ -1,6 +1,10 @@
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
+const LIB_ROOT = resolveProjectRoot();
+
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
 
 async function main() {
   const { runScriptWithResult, loadConfig } = await import(CAVALRY_MCP_STALLION);
@@ -9,7 +13,7 @@ async function main() {
   const script = `
 (function() {
   var comp = api.getActiveComp();
-  
+
   var blurTypes = ['blurFilter', 'sceneGroup::gaussianBlurFilter', 'gaussianBlurFilter', 'sceneGroup::boxBlurFilter'];
   var results = {};
   for (var i = 0; i < blurTypes.length; i++) {

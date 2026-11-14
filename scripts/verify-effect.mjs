@@ -1,12 +1,15 @@
 import fs from 'node:fs';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { syncCavalryScript } from './sync-cavalry-script.mjs';
 
+const LIB_ROOT = resolveProjectRoot();
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
-const CAVALRY_MCP_DOCTOR = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/doctor.js').href;
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
+const CAVALRY_MCP_DOCTOR = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'doctor.js')).href;
 
 async function main() {
     const slug = process.argv[2] || 'turbulent-displace';

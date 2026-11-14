@@ -1,6 +1,10 @@
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
+const LIB_ROOT = resolveProjectRoot();
+
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
 
 async function main() {
   const { runScriptWithResult, loadConfig } = await import(CAVALRY_MCP_STALLION);
@@ -9,12 +13,12 @@ async function main() {
   const script = `
 (function() {
   var comp = api.getActiveComp();
-  
+
   // 1. Test Null creation and parenting
   var r1 = api.primitive('rectangle', 'Child 1');
   var r2 = api.primitive('rectangle', 'Child 2');
   var nullNode = api.create('null', 'AE Null 1');
-  
+
   var parentRes1 = api.parent(r1, nullNode);
   var parentRes2 = api.parent(r2, nullNode);
   var p1 = api.getParent(r1);
@@ -24,7 +28,7 @@ async function main() {
   var r3 = api.primitive('rectangle', 'PreComp Child 1');
   var r4 = api.primitive('rectangle', 'PreComp Child 2');
   api.select([r3, r4]);
-  
+
   var preCompResult = null;
   var preCompError = null;
   try {

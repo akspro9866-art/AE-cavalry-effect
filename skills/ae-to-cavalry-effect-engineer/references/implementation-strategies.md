@@ -12,7 +12,7 @@ Choose the Cavalry execution mechanism based on what the After Effects effect ac
 
 ## Verification Checklist Before Coding Any Mechanism
 
-1. Search `C:/Users/khada/cavalry-mcp/data/api_reference.json` for candidate native nodes/attributes first.
+1. Search `<cavalry-mcp-install>/data/api_reference.json` for candidate native nodes/attributes first.
 2. Check `@scenery/cavalry-types/types/{deformer,modifier,shape,utility}.d.ts` for allowed globals in that expression context.
 3. For `skslFilter`: declare ONLY `uniform shader layer;` (do NOT declare `uniform float2 resolution;` — Cavalry's preamble injects it), treat `fragCoord` as centered `(0, 0)` with `+Y` up (`uv = (fragCoord / resolution) + 0.5`), use effect-prefixed `inputs.*` float names (avoiding `size`/`resolution`), bind via `inputs.0..N` on live Cavalry (stripping `uniform float` header lines when uploading `code` to live `skslFilter`) while retaining Mock `uniforms.*` and `const float` fallbacks, configure `padding: { x, y }` for bounds expansion, and use branchless SIMD math + constant loop bounds.
 4. For `javaScriptDeformer`: confirm `ctx.frame`/`ctx.time` are **never** assumed (drive time via dynamic `array.*` attributes), use `def.getRootMesh()` -> `mesh.count()` / `getPathAtIndex()` -> `path.resample()` + `path.pathData()` + `path.setPathData()` -> `mesh.setPathAtIndex()` -> `def.setRootMesh()` + `def.getFalloffAtPoint()`, and keep zero references to `api`/`ui`/`render`.

@@ -2,6 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Historical one-shot patch that originally registered 25 effects. It now runs in
+// fill-missing-only mode: entries already present in effect-registry.json are NEVER
+// overwritten, because their status / artifacts / metadata evolve independently of
+// the hardcoded definitions below (re-running the old version would silently reset
+// "approximation" statuses to "mock-tested" and drop newer artifact keys).
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const regPath = path.join(ROOT, 'effect-registry.json');
 const reg = JSON.parse(fs.readFileSync(regPath, 'utf8'));
@@ -634,6 +639,7 @@ const newEffects = {
   }
 };
 
+const added = [];
 for (const [slug, def] of Object.entries(newEffects)) {
   // Validate that all referenced artifacts exist
   for (const [artKey, artPath] of Object.entries(def.artifacts)) {
@@ -642,8 +648,18 @@ for (const [slug, def] of Object.entries(newEffects)) {
       throw new Error(`Missing artifact for ${slug}: ${artKey} at ${absPath}`);
     }
   }
+  if (reg.effects[slug]) {
+    console.warn(`Skipping "${slug}": already present in effect-registry.json (fill-missing-only mode; edit the registry directly to update existing effects).`);
+    continue;
+  }
   reg.effects[slug] = def;
+  added.push(slug);
 }
 
-fs.writeFileSync(regPath, JSON.stringify(reg, null, 2) + '\n', 'utf8');
-console.log(`Successfully updated effect-registry.json with ${Object.keys(reg.effects).length} total effects!`);
+if (added.length) {
+  fs.writeFileSync(regPath, JSON.stringify(reg, null, 2) + '\n', 'utf8');
+}
+console.log(`Registry holds ${Object.keys(reg.effects).length} total effects: ${added.length} added, ${Object.keys(newEffects).length - added.length} skipped (already present).`);
+if (!added.length) {
+  console.log('Nothing to write — effect-registry.json left untouched.');
+}

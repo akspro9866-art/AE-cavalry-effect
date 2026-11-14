@@ -27,6 +27,8 @@
   "scripts": {
     "test": "node scripts/run-tests.mjs",
     "test:live": "node scripts/live-verify-all-effects.mjs",
+    "lint": "node scripts/lint.mjs",
+    "coverage": "node --test --experimental-test-coverage test/*.test.mjs",
     "sync:embedded": "node scripts/sync-embedded.mjs",
     "sync:agents": "node scripts/sync-agent-configs.mjs",
     "sync:script": "node scripts/sync-cavalry-script.mjs",

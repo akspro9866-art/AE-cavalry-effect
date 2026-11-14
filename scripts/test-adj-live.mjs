@@ -1,7 +1,11 @@
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
 import fs from 'node:fs';
 
-const CAVALRY_MCP_STALLION = pathToFileURL('C:/Users/khada/cavalry-mcp/dist/bridge/stallion.js').href;
+const LIB_ROOT = resolveProjectRoot();
+
+const CAVALRY_MCP_STALLION = pathToFileURL(path.join(resolveCavalryMcpPath() || '.', 'dist', 'bridge', 'stallion.js')).href;
 
 async function main() {
   const { runScriptWithResult, runBatchStep, loadConfig } = await import(CAVALRY_MCP_STALLION);
@@ -18,7 +22,7 @@ async function main() {
 })();
 `;
   await runScriptWithResult(script, cfg);
-  const implCode = fs.readFileSync('C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects/effects/adjustment-layer/implementation.js', 'utf8');
+  const implCode = fs.readFileSync(LIB_ROOT + '/effects/adjustment-layer/implementation.js', 'utf8');
   const res = await runScriptWithResult(implCode, cfg);
   console.log('ADJ APPLY RESULT:', JSON.stringify(res, null, 2));
 
@@ -26,7 +30,7 @@ async function main() {
     script: '/* render adj */',
     sampleFrames: [0],
     renderFrames: true,
-    renderOutputDir: 'C:/Users/khada/.gemini/antigravity/scratch/ae-cavalry-effects/artifacts/probe-adj'
+    renderOutputDir: LIB_ROOT + '/artifacts/probe-adj'
   }, cfg);
   console.log('ADJ RENDER STATUS:', renderStep.ok);
 
