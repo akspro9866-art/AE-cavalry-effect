@@ -34,6 +34,7 @@
     "sync:script": "node scripts/sync-cavalry-script.mjs",
     "sync": "node scripts/sync-embedded.mjs && node scripts/sync-agent-configs.mjs && node scripts/sync-cavalry-script.mjs",
     "check": "node scripts/sync-embedded.mjs --check && node scripts/sync-agent-configs.mjs --check && node scripts/sync-cavalry-script.mjs --check",
-    "build": "npm run sync && npm test"
+    "build": "npm run sync && npm test",
+    "translate": "node scripts/translate-expression.mjs"
   }
 }

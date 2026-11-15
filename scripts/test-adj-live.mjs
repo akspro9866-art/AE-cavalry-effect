@@ -1,3 +1,11 @@
+// Explicit live-Cavalry opt-in gate: hosted runners never touch port 8080.
+// The dedicated workflow_dispatch `live-verify` job sets CAVALRY_LIVE=true;
+// without the gate this script exits 0 with a skip message so headless CI
+// can neither hang nor fail on connection refused.
+if (process.env.CAVALRY_LIVE !== 'true') {
+    console.log('Live verification skipped: CAVALRY_LIVE !== "true" (set the env var, or run the workflow_dispatch live-verify job).');
+    process.exit(0);
+}
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { resolveProjectRoot, resolveCavalryMcpPath } from './lib/config.mjs';
