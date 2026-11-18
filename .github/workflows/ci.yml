@@ -15,11 +15,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  # Opt-in gate for live-Cavalry work, sourced from a repository variable so
-  # forks stay headless by default. live-verify re-asserts it explicitly.
-  CAVALRY_LIVE: ${{ vars.CAVALRY_LIVE || 'false' }}
-
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -55,7 +50,7 @@ jobs:
   # 'true'; the live script independently re-checks the env gate and skips
   # deterministically otherwise.
   live-verify:
-    if: github.event_name == 'workflow_dispatch' && env.CAVALRY_LIVE == 'true'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       CAVALRY_LIVE: 'true'
